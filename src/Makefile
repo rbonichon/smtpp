@@ -15,13 +15,16 @@ include ../Caml.mk
 PARSER = parser
 LEXER = lexer
 MLFILES_PRE = config utils locations io pp
-MLFILES_POST = pushpop main
+MLFILES_TRANS = pushpop obfuscator
+MLFILES_POST = main
 MLIFILES = ast
-SRCFILES= $(MLFILES_PRE:%=%.ml) \
-	  $(MLFILES_POST:%=%.ml) \
-	  $(MLIFILES:%=%.mli)
+SRCMLFILES= $(MLFILES_PRE:%=%.ml) \
+	$(MLFILES_TRANS:%=%.ml) \
+	$(MLFILES_POST:%=%.ml) \
+	$(MLIFILES:%=%.mli)
+SRCFILES= $(SRCMLFILES) $(PARSER:%=%.mly) $(LEXER=%=%.mll)
 GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
-CAMLFILES = $(SRCFILES) $(GENFILES)
+CAMLFILES = $(SRCMLFILES) $(GENFILES)
 CMXFILES = $(MLFILES_PRE:%=%.cmx) \
 	   $(LEXER:%=%.cmx) \
 	   $(PARSER:%=%.cmx) \
@@ -61,6 +64,7 @@ depend:: beforedepend $(CAMLFILES)
 .PHONY: license
 
 license:
-	for i in $(SRCFILES) parser.mly lexer.mll; do \
+	@echo "Adding license prelude to files"
+	@for i in $(SRCFILES); do \
 		headache -r -h ../LICENSE $$i; \
 	done
