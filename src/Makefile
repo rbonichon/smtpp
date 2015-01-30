@@ -19,7 +19,7 @@ MLFILES_POST = pushpop main
 MLIFILES = ast
 SRCFILES= $(MLFILES_PRE:%=%.ml) \
 	  $(MLFILES_POST:%=%.ml) \
-	   $(MLIFILES:%=%.mli)
+	  $(MLIFILES:%=%.mli)
 GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
 CAMLFILES = $(SRCFILES) $(GENFILES)
 CMXFILES = $(MLFILES_PRE:%=%.cmx) \
@@ -58,7 +58,9 @@ beforedepend: $(CAMLFILES)
 
 depend:: beforedepend $(CAMLFILES)
 
-.PHONY: test
+.PHONY: license
 
-test: $(NAT)
-	@echo "Testing"
+license:
+	for i in $(SRCFILES) parser.mly lexer.mll; do \
+		headache -r -h ../LICENSE $$i; \
+	done

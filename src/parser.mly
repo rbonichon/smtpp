@@ -1,3 +1,20 @@
+/**************************************************************************/
+/*  Copyright (c) 2015 Richard Bonichon <richard.bonichon@gmail.com>      */
+/*                                                                        */
+/*  Permission to use, copy, modify, and distribute this software for any  */
+/*  purpose with or without fee is hereby granted, provided that the above  */
+/*  copyright notice and this permission notice appear in all copies.     */
+/*                                                                        */
+/*  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  */
+/*  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF      */
+/*  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR  */
+/*  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES  */
+/*  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN  */
+/*  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  */
+/*  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.        */
+/*                                                                        */
+/**************************************************************************/
+
 %{
     open Ast
     open Locations ;;
@@ -133,7 +150,7 @@ script:
     { mk_command CmdCheckSat }
 | DECLARECONST symb=symbol; so=sort;
   { mk_command (CmdDeclareConst(symb, so)) }
-| DECLAREFUN symb=symbol; polys=option(sort+); LPAREN sorts=sort* RPAREN so=sort;
+| DECLAREFUN symb=symbol; polys=option(poly_parameters); LPAREN sorts=sort* RPAREN so=sort;
   { mk_command (CmdDeclareFun (symb, polys, sorts, so)) }
 | DECLARESORT symb=symbol; num=NUMERAL;
   { mk_command (CmdDeclareSort(symb, num)) }
@@ -171,9 +188,9 @@ script:
   { mk_command (CmdGetValue ts) }
 | METAINFO attr=attribute;
   { mk_command (CmdMetaInfo attr) }
-| POP num=NUMERAL;
+| POP num=option(NUMERAL);
   { mk_command (CmdPop num) }
-| PUSH num=NUMERAL;
+| PUSH num=option(NUMERAL);
   { mk_command (CmdPush num) }
 | SETINFO attr=attribute;
   { mk_command (CmdSetInfo attr) }
@@ -184,7 +201,7 @@ script:
 ;
 
 fun_def:
-| symb=symbol; polys=option(sort+); LPAREN svars=sorted_var*; RPAREN so=sort; t=term;
+| symb=symbol; polys=option(poly_parameters); LPAREN svars=sorted_var*; RPAREN so=sort; t=term;
   { (symb, polys, svars, so, t) }
   ;
 
@@ -197,10 +214,6 @@ fun_rec_def:
 | LPAREN fd=fun_def RPAREN
  { let s, ps, svs, so, t = fd in mk_fun_rec_def (FunRecDef (s, ps, svs, so, t)) }
  ;
-
-sorts:
-| sort+ { $1 }
-;
 
 poly_parameters:
 | PAR LPAREN sorts=sort+; RPAREN { sorts }

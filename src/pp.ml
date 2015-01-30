@@ -1,3 +1,20 @@
+(**************************************************************************)
+(*  Copyright (c) 2015 Richard Bonichon <richard.bonichon@gmail.com>      *)
+(*                                                                        *)
+(*  Permission to use, copy, modify, and distribute this software for any  *)
+(*  purpose with or without fee is hereby granted, provided that the above  *)
+(*  copyright notice and this permission notice appear in all copies.     *)
+(*                                                                        *)
+(*  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  *)
+(*  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF      *)
+(*  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR  *)
+(*  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES  *)
+(*  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN  *)
+(*  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  *)
+(*  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.        *)
+(*                                                                        *)
+(**************************************************************************)
+
 (* Pretty printer for the AST *)
 open Format
 open Lexing
@@ -13,7 +30,11 @@ let _pp_loc fmt (b, e)  =
 
 let pp_list pp_f fmt elts =
   fprintf fmt "@[<hov 2>";
-  List.iter (fun elt -> fprintf fmt "%a" pp_f elt) elts;
+  let rec pp_list_aux fmt = function
+    | [] -> ()
+    | [e] -> fprintf fmt "%a" pp_f e
+    | e :: es -> fprintf fmt "%a@ %a" pp_f e pp_list_aux es 
+  in pp_list_aux fmt elts;
   fprintf fmt "@]";
 ;;
 
@@ -146,6 +167,8 @@ let pp_opt_type_parameters fmt optsorts =
   | Some sorts -> fprintf fmt "par@ (%a)@ " pp_sorts sorts
   | None -> ()
 ;;
+
+
 let pp_fun_def fmt fun_def =
   match fun_def.fun_def_desc with
   | FunDef (symb, optsorts , svars, sort, term) ->
@@ -190,7 +213,7 @@ let pp_cmd fmt cmd =
   | CmdCheckSatAssuming symbs ->
      fprintf fmt "check-sat-assuming@ (%a)" pp_symbols symbs
   | CmdDeclareConst (symb, sort) ->
-     fprintf fmt "declare-const@ %a@ %a"
+     fprintf fmt "@[<hov 2>declare-const@ %a@ %a@]"
              pp_symbol symb
              pp_sort sort
   | CmdDeclareFun (symb, _, sorts, sort) ->
@@ -228,10 +251,14 @@ let pp_cmd fmt cmd =
      fprintf fmt "get-value@ (%a)" pp_terms terms
   | CmdMetaInfo attr ->
      fprintf fmt "meta-info@ %a" pp_attribute attr
-  | CmdPop n ->
+  | CmdPop (Some n) ->
      fprintf fmt "pop@ %a" pp_numeral n
-  | CmdPush n ->
+  | CmdPush (Some n) ->
      fprintf fmt "push@ %a" pp_numeral n
+  | CmdPop None ->
+     fprintf fmt "pop" 
+  | CmdPush None  ->
+     fprintf fmt "push"
   | CmdReset ->
      fprintf fmt "reset"
   | CmdResetAssertions ->
@@ -246,11 +273,11 @@ let pp_cmd fmt cmd =
 
 let pp_command_list fmt l =
  (* All commands are delimited by (). This is printed here. *)
-  List.iter (fun cmd -> Format.fprintf fmt "(%a)@ " pp_cmd cmd) l
+  List.iter (fun cmd -> Format.fprintf fmt "@[<hov 2>(%a)@]@ " pp_cmd cmd) l
 ;;
 
 let pp_script fmt cmds =
- Format.fprintf fmt "@[<v 0>@ %a@]@." pp_command_list cmds
+ Format.fprintf fmt "@[<v 0>%a@]@." pp_command_list cmds
 ;;
 
 let pp fmt (s:script) = pp_script fmt s.script_commands ;;

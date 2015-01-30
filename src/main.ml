@@ -1,3 +1,20 @@
+(**************************************************************************)
+(*  Copyright (c) 2015 Richard Bonichon <richard.bonichon@gmail.com>      *)
+(*                                                                        *)
+(*  Permission to use, copy, modify, and distribute this software for any  *)
+(*  purpose with or without fee is hereby granted, provided that the above  *)
+(*  copyright notice and this permission notice appear in all copies.     *)
+(*                                                                        *)
+(*  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  *)
+(*  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF      *)
+(*  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR  *)
+(*  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES  *)
+(*  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN  *)
+(*  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  *)
+(*  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.        *)
+(*                                                                        *)
+(**************************************************************************)
+
 (* Default message to the user *)
 let umsg = "Usage: smtpoly <file>";;
 
@@ -63,13 +80,18 @@ let lex_file () =
 let main () =
   let (lexbuf, _close) = lex_file () in
   try
+    Format.printf "parsing %s@." (Config.get_file ());
      let script = Parser.script Lexer.token lexbuf in
      if Config.get_pushpop () then Pushpop.apply script;
      if !reprint then Pp.pp_tofile "reprinted_ast.smt2" script;
   with
-  | Parsing.Parse_error  ->
+  | Lexer.LexError msg ->
+     Format.eprintf "Parse error: %s@." msg;
+     report_error lexbuf
+  | Parser.Error  ->
      Format.eprintf "Parse error:@.";
      report_error lexbuf
+                  
 ;;
 
 main ()

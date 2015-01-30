@@ -1,3 +1,20 @@
+(**************************************************************************)
+(*  Copyright (c) 2015 Richard Bonichon <richard.bonichon@gmail.com>      *)
+(*                                                                        *)
+(*  Permission to use, copy, modify, and distribute this software for any  *)
+(*  purpose with or without fee is hereby granted, provided that the above  *)
+(*  copyright notice and this permission notice appear in all copies.     *)
+(*                                                                        *)
+(*  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  *)
+(*  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF      *)
+(*  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR  *)
+(*  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES  *)
+(*  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN  *)
+(*  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF  *)
+(*  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.        *)
+(*                                                                        *)
+(**************************************************************************)
+
 open Ast ;;
 open Format ;;
 open Lexing ;;
@@ -29,7 +46,9 @@ open Locations ;;
 let set_basename, new_file_name =
   let i = ref 0 in
   let basename = ref "smt_pop" in
-  (fun filename -> basename := Filename.chop_extension filename) ,
+  (fun filename ->
+   let bname = Filename.basename filename in 
+   basename := Filename.chop_extension bname) ,
   (fun () -> incr i; sprintf "%s_%d.smt2" !basename !i)
 ;;
 
@@ -72,25 +91,28 @@ let eval (prelude, stack, cmds) cmd =
   match cmd.command_desc with
   | CmdPush n ->
      begin
-         match n with
-         | 0 -> prelude, stack, cmds
-         | 1 -> prelude, push cmds stack, []
-         | _  ->
-            (* The current command list (filtered) is saved on the stack.
-             * Empty command lists are added as needed to make the count.
-             *)
-            if n > 1 then
-              let stack' = (mk_empty_pushes (n - 1)) @ push cmds stack in
-              prelude, stack', []
-            else assert false
+       let n = Utils.default_opt 1 n in
+       assert (n >= 0);
+       match n with
+       | 0 -> prelude, stack, cmds
+       | 1 -> prelude, push cmds stack, []
+       | _  ->
+          (* The current command list (filtered) is saved on the stack.
+           * Empty command lists are added as needed to make the count.
+           *)
+          if n > 1 then
+            let stack' = (mk_empty_pushes (n - 1)) @ push cmds stack in
+            prelude, stack', []
+          else assert false
      end
 
   | CmdPop n ->
-       assert (n >= 0);
-         (* Substitutes the current environment by what has been previously
-          * saved on the stack
-          *)
-         prelude, pop (n - 1) stack, []
+     let n = Utils.default_opt 1 n in 
+     assert (n >= 0);
+     (* Substitutes the current environment by what has been previously
+      * saved on the stack
+      *)
+     prelude, pop (n - 1) stack, []
 
   | CmdCheckSat ->
      let filename = new_file_name () in
@@ -130,6 +152,6 @@ let eval (prelude, stack, cmds) cmd =
 
 let apply script =
   let filename = script.script_loc.loc_start.pos_fname in
-  set_basename filename;
+  (* set_basename filename; *)
   ignore(List.fold_left eval ([], empty_assertion_set, []) script.script_commands)
 ;;

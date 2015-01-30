@@ -1,0 +1,13 @@
+*.cmi
+*.annot
+*.cmi
+*.cmo
+*.cmx
+*.o
+smtpp.byt
+smtpp.opt
+/src/config.cmo
+/src/lexer.ml
+/src/parser.ml
+/src/parser.mli
+/src/.depend
