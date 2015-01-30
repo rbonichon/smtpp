@@ -8,6 +8,10 @@ lambda-terms and polymorphic types in scripts.
 - OCaml
 - [menhir](http://gallium.inria.fr/~fpottier/menhir/)
 
+For developers only:
+- headache for license header generation
+
+
 # Compilation
 
 The usual incantation
@@ -17,7 +21,7 @@ The usual incantation
 % make depend && make
 ```
 
-should produce two binaries
+should produce two binaries in `src`
 - `smtpp.byt` : a bytecode executable software
 - `smtpp.opt` : a native code executable
 
