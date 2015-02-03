@@ -26,9 +26,10 @@ SRCFILES= $(SRCMLFILES) $(PARSER:%=%.mly) $(LEXER=%=%.mll)
 GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
 CAMLFILES = $(SRCMLFILES) $(GENFILES)
 CMXFILES = $(MLFILES_PRE:%=%.cmx) \
-	   $(LEXER:%=%.cmx) \
-	   $(PARSER:%=%.cmx) \
-	   $(MLFILES_POST:%=%.cmx)
+	$(LEXER:%=%.cmx) \
+	$(PARSER:%=%.cmx) \
+	$(MLFILES_TRANS:%=%.cmx) \
+	$(MLFILES_POST:%=%.cmx)
 CMIFILES= $(MLIFILES:%=%.cmi)
 CMOFILES= $(CMXFILES:%.cmx=%.cmo)
 

@@ -26,7 +26,16 @@ type constant =
   | CstBool of bool
 ;;
 
-type symbol = string ;;
+type symbol_desc =
+  | SimpleSymbol of string
+  | QuotedSymbol of string
+;;
+
+type symbol = {
+    symbol_desc : symbol_desc;
+    symbol_loc  : Locations.t;
+  }
+;;
 
 type symbols = symbol list ;;
 
@@ -46,11 +55,9 @@ and sexpr = {
 and sexprs = sexpr list
 ;;
 
-type simple_symbol = string ;;
-
 type index =
   | IdxNum of int
-  | IdxSymbol of simple_symbol
+  | IdxSymbol of symbol
 ;;
 
 type indexes = index list ;;
@@ -216,7 +223,7 @@ type command_desc =
   | CmdGetUnsatCore
   | CmdGetValue of terms (* at least one term *)
   | CmdMetaInfo of attribute
-  | CmdPop of numeral option 
+  | CmdPop of numeral option
   | CmdPush of numeral option
   | CmdReset
   | CmdResetAssertions

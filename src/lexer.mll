@@ -51,7 +51,7 @@
       "echo"                  , ECHO;
       "reset"                 , RESET;
       "reset-assertions"      , RESETASSERTIONS;
-      "lambda"                , LAMBDA;
+      (*      "lambda"                , LAMBDA; *)
       "par"                   , PAR;
       "!"                     , BANG;
       "_"                     , UNDERSCORE;
@@ -110,7 +110,9 @@ let numeral = ('0' | ['1'-'9'] digit*)
 let hexadigit = (digit | ['a'-'f'])
 let lower = ['a'-'z']
 let upper = ['A'-'Z']
-let other = ['~' '!' '@' '$' '%' '^' '&' '*' '_' '-' '+' '=' '<' '>' '.' '?' '/']
+let other = ['~' '!' '@' '$' '%' '^' '&' '*' 
+                 '_' '-' '+' '=' '<' '>' '.' '?' '/''|'
+            ]
 let startchar= (lower | upper | other)
 
 rule token = parse
@@ -141,6 +143,8 @@ rule token = parse
         try Hashtbl.find reserved_table s
         with Not_found -> SYMBOL s
       }
+  | '|' [^ '|' '\\']* as s '|' 
+        { QUOTEDSYMBOL s }
   | eof       { EOF }
   | _
       { let msg = sprintf "@[Bad character %c@]" (Lexing.lexeme_char lexbuf 0) in

@@ -40,7 +40,11 @@ let pp_list pp_f fmt elts =
 
 let pp_numeral fmt n = fprintf fmt "%n" n ;;
 
-let pp_symbol fmt symb = fprintf fmt "%s" symb ;;
+let pp_symbol fmt symb =
+  match symb.symbol_desc with
+  | SimpleSymbol s -> fprintf fmt "%s" s
+  | QuotedSymbol s -> fprintf fmt "|%s|" s
+;;
 
 let pp_symbols fmt symbs = fprintf fmt "%a" (pp_list pp_symbol) symbs ;;
 

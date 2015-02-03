@@ -80,7 +80,7 @@ let lex_file () =
 let main () =
   let (lexbuf, _close) = lex_file () in
   try
-    Format.printf "parsing %s@." (Config.get_file ());
+    (*     Format.printf "parsing %s@." (Config.get_file ());*)
      let script = Parser.script Lexer.token lexbuf in
      if Config.get_pushpop () then Pushpop.apply script;
      if !reprint then Pp.pp_tofile "reprinted_ast.smt2" script;

@@ -151,7 +151,7 @@ let eval (prelude, stack, cmds) cmd =
 ;;
 
 let apply script =
-  let filename = script.script_loc.loc_start.pos_fname in
+  let _filename = script.script_loc.loc_start.pos_fname in
   (* set_basename filename; *)
   ignore(List.fold_left eval ([], empty_assertion_set, []) script.script_commands)
 ;;

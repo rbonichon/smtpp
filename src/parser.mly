@@ -78,6 +78,7 @@
       { info_flag_desc; info_flag_loc = symbol_rloc (); }
     ;;
 
+    let mk_symbol symbol_desc = { symbol_desc; symbol_loc = symbol_rloc (); } ;;
 %}
 
 %start script
@@ -101,7 +102,7 @@
 %token DEFINEFUN
 %token DEFINEFUNREC
 %token PAR
-%token LAMBDA
+/* %token LAMBDA */
 %token PUSH
 %token POP
 %token ASSERT
@@ -134,6 +135,7 @@
 %token <bool>   BOOL
 %token <string> KEYWORD
 %token <string> SYMBOL
+%token <string> QUOTEDSYMBOL
 
 %type  <Ast.script> script
 
@@ -235,7 +237,8 @@ identifier:
 ;
 
 symbol:
-| SYMBOL { $1 }
+| SYMBOL { mk_symbol (SimpleSymbol $1) }
+| QUOTEDSYMBOL { mk_symbol (QuotedSymbol $1) }
 ;
 
 term:
