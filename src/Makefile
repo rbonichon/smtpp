@@ -2,6 +2,7 @@
 EXE=smtpp
 NAT=$(EXE).opt
 BYT=$(EXE).byt
+SNAT=static_$(EXE).opt
 
 # default target (activate when you invoke only 'make')
 default: $(NAT) $(BYT)
@@ -18,11 +19,12 @@ MLFILES_PRE = config utils locations io pp
 MLFILES_TRANS = pushpop obfuscator
 MLFILES_POST = main
 MLIFILES = ast
-SRCMLFILES= $(MLFILES_PRE:%=%.ml) \
+OTHERFILES = $(PARSER:%=%.mly) $(LEXER=%=%.mll)
+SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
 	$(MLFILES_TRANS:%=%.ml) \
 	$(MLFILES_POST:%=%.ml) \
 	$(MLIFILES:%=%.mli)
-SRCFILES= $(SRCMLFILES) $(PARSER:%=%.mly) $(LEXER=%=%.mll)
+SRCFILES = $(SRCMLFILES) $(OTHERFILES)
 GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
 CAMLFILES = $(SRCMLFILES) $(GENFILES)
 CMXFILES = $(MLFILES_PRE:%=%.cmx) \
@@ -30,13 +32,12 @@ CMXFILES = $(MLFILES_PRE:%=%.cmx) \
 	$(PARSER:%=%.cmx) \
 	$(MLFILES_TRANS:%=%.cmx) \
 	$(MLFILES_POST:%=%.cmx)
-CMIFILES= $(MLIFILES:%=%.cmi)
-CMOFILES= $(CMXFILES:%.cmx=%.cmo)
+CMIFILES = $(MLIFILES:%=%.cmi)
+CMOFILES = $(CMXFILES:%.cmx=%.cmo)
 
-LIBS = nums
+LIBS =
 OPTLIBDEPS = $(LIBS:%=%.cmxa)
 LIBDEPS = $(LIBS:%=%.cma)
-
 
 $(NAT): depend $(CMXFILES)
 	@echo "EXE $@"
@@ -46,6 +47,14 @@ $(NAT): depend $(CMXFILES)
 $(BYT): depend $(CMIFILES) $(CMOFILES)
 	@echo "EXE $@"
 	@$(CAMLBYT) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMOFILES)
+
+static: $(SNAT)
+opt: $(NAT)
+byt: $(BYT)
+
+$(SNAT): depend $(CMXFILES)
+	@echo "STATIC $@"
+	$(CAMLBIN) $(CAMLINCLUDES) -noautolink -o $@ $(OPTLIBDEPS) $(CMXFILES) -cclib '-static'
 
 clean::
 	-$(RM) $(EXE) $(EXE).byt *.annot
@@ -72,3 +81,7 @@ license:
 
 doc: $(SRCMLFILES)
 	$(CAMLDOC) -html -d ../doc $(SRCMLFILES)
+
+.PHONY: stats
+stats:
+	@wc -l $(SRCFILES)
