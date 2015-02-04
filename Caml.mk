@@ -7,6 +7,8 @@ CAMLYACOPTS=
 RM=rm -f
 CAMLDEP=ocamldep
 CAMLFLAGS=-w +a-4 -g -annot
+CAMLDOR=ocamldoc
+
 
 .PHONY: default all bin byt clean cleandir configure depend beforedepend
 

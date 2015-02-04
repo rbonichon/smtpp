@@ -69,3 +69,6 @@ license:
 	@for i in $(SRCFILES); do \
 		headache -r -h ../LICENSE $$i; \
 	done
+
+doc: $(SRCMLFILES)
+	$(CAMLDOC) -html -d ../doc $(SRCMLFILES)

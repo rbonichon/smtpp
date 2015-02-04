@@ -18,13 +18,26 @@ The usual incantation
 
 ```{.bash}
 % ./configure
-% make depend && make
+% make
 ```
 
 should produce two binaries in `src`
 - `smtpp.byt` : a bytecode executable software
 - `smtpp.opt` : a native code executable
 
+
+## Developers
+
+If you are working in the `src` directory, you might not want to recompile
+everything for every change.
+
+If there is no `.depend` file, do a `touch .depend` first.
+Otherwise:
+
+- If you have just changed a file and not added any, a simple `make` should
+suffice
+- If you have added a file, add it to the Makefile in the proper file list, and
+  do a `make depend && make`.
 
 # Documentation
 

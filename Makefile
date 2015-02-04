@@ -1,6 +1,6 @@
 default: exe
 
-all: exe test
+all: exe doc test
 
 SRCDIR=src
 TESTDIR=tests
@@ -15,3 +15,6 @@ clean:
 
 test: exe
 	@echo "Testing"
+
+doc:
+	(cd $(SRCDIR); $(MAKE) doc)
