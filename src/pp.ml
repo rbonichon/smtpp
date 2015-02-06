@@ -240,7 +240,7 @@ let pp_cmd fmt cmd =
              pp_numeral num
   | CmdGetAssertions -> fprintf fmt "get-assertions"
   | CmdGetAssignment -> fprintf fmt "get-assignment"
-  | CmdExit -> fprintf fmt "exist"
+  | CmdExit -> fprintf fmt "exit"
   | CmdEcho s -> fprintf fmt "echo@ \"%s\"" s
   | CmdGetModel-> fprintf fmt "get-model"
   | CmdGetProof -> fprintf fmt "get-proof"
@@ -280,11 +280,11 @@ let pp_command_list fmt l =
   List.iter (fun cmd -> Format.fprintf fmt "@[<hov 2>(%a)@]@ " pp_cmd cmd) l
 ;;
 
-let pp_script fmt cmds =
+let pp_commands fmt cmds =
  Format.fprintf fmt "@[<v 0>%a@]@." pp_command_list cmds
 ;;
 
-let pp fmt (s:script) = pp_script fmt s.script_commands ;;
+let pp fmt (s:script) = pp_commands fmt s.script_commands ;;
 
 let pp_tofile filename program =
   let oc = Pervasives.open_out_bin filename in
