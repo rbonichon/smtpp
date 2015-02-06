@@ -31,8 +31,8 @@ let rec argspec =
   " print this option list and exits";
   "-help", Arg.Unit print_usage ,
   " print this option list and exits";
-  "-reprint", Arg.Set reprint,
-  " reprints the SMT AST read";
+  "-pp", Arg.Set reprint,
+  " prints the SMT-LIB AST read on stdout";
   "-debug", Arg.Unit (fun () -> Config.set_debug true),
   " enables debug messages";
   "-multi", Arg.Unit (fun () -> Config.set_pushpop true),
@@ -80,10 +80,9 @@ let lex_file () =
 let main () =
   let (lexbuf, _close) = lex_file () in
   try
-    (*     Format.printf "parsing %s@." (Config.get_file ());*)
      let script = Parser.script Lexer.token lexbuf in
      if Config.get_pushpop () then Pushpop.apply script;
-     if !reprint then Pp.pp_tofile "reprinted_ast.smt2" script;
+     if !reprint then Pp.pp Format.std_formatter script;
   with
   | Lexer.LexError msg ->
      Format.eprintf "Parse error: %s@." msg;
@@ -91,7 +90,7 @@ let main () =
   | Parser.Error  ->
      Format.eprintf "Parse error:@.";
      report_error lexbuf
-                  
+
 ;;
 
 main ()

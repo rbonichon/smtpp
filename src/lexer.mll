@@ -143,7 +143,7 @@ rule token = parse
         try Hashtbl.find reserved_table s
         with Not_found -> SYMBOL s
       }
-  | '|' [^ '|' '\\']* as s '|' 
+  | '|' ([^ '|' '\\']* as s) '|' 
         { QUOTEDSYMBOL s }
   | eof       { EOF }
   | _

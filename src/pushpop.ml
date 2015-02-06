@@ -119,7 +119,7 @@ let eval (prelude, stack, cmds) cmd =
      printf "Outputting problem %s@." filename;
      let oc = open_out_bin filename in
      let ppf = formatter_of_out_channel oc in
-     Pp.pp_script ppf (List.rev (stack_script ((cmd :: cmds) :: stack) @ prelude)) ;
+     Pp.pp_commands ppf (List.rev (stack_script ((cmd :: cmds) :: stack) @ prelude)) ;
      close_out oc;
      prelude, stack, cmds
 
