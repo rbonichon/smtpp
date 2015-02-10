@@ -5,13 +5,13 @@ BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
 
 # default target (activate when you invoke only 'make')
-default: $(NAT) $(BYT)
+default: $(BEST)
 
 # list of targets that should be recompiled every time
 .PHONY: default
 
 # Load the default OCaml rules from the file Caml.mk
-include ../Caml.mk
+include ../Config.mk
 
 PARSER = parser
 LEXER = lexer
@@ -73,14 +73,18 @@ depend:: beforedepend $(CAMLFILES)
 
 .PHONY: license
 
+ifneq ($(HEADACHE),no)
 license:
 	@echo "Adding license prelude to files"
 	@for i in $(SRCFILES); do \
 		headache -r -h ../LICENSE $$i; \
 	done
+endif
 
+ifneq ($(CAMLDOC),no)
 doc: $(SRCMLFILES)
 	$(CAMLDOC) -html -d ../doc $(SRCMLFILES)
+endif
 
 .PHONY: stats
 stats:

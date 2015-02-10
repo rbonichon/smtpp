@@ -1,13 +1,16 @@
-CAMLBYT=ocamlc
-CAMLBIN=ocamlopt
-CAMLLEX=ocamllex
+CAMLBYT=@OCAMLC@
+CAMLBIN=@OCAMLOPT@
+CAMLLEX=@OCAMLLEX@
 CAMLLEXOPTS=
-CAMLYAC=menhir
+CAMLYAC=@MENHIR@
 CAMLYACOPTS=
 RM=rm -f
-CAMLDEP=ocamldep
+CAMLDEP=@OCAMLDEP@
 CAMLFLAGS=-w +a-4 -g -annot
-CAMLDOR=ocamldoc
+CAMLDOC=@OCAMLDOC@
+HEADACHE=@HEADACHE@
+BEST=@OCAMLBEST@
+
 
 
 .PHONY: default all bin byt clean cleandir configure depend beforedepend
