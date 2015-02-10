@@ -29,7 +29,7 @@ if test "$OCAMLOPT" = no; then
 else
     AC_CHECK_PROG(OCAMLOPTDOTOPT,ocamlopt.opt,ocamlopt.opt,no)
     if test "$OCAMLOPTDOTOPT" != no; then
-        OCAMLC=$OCAMLCOPTOPT
+        OCAMLOPT=$OCAMLOPTDOTOPT
     fi
     OCAMLBEST=opt
 fi
@@ -71,6 +71,7 @@ AC_SUBST(MENHIR)
 AC_SUBST(OCAMLDOC)
 AC_SUBST(OCAMLBEST)
 AC_SUBST(HEADACHE)
+AC_SUBST(OCAMLBEST)
 
 AC_CONFIG_FILES([Config.mk], [chmod a-w Config.mk])
 AC_OUTPUT
@@ -78,6 +79,6 @@ AC_OUTPUT
 AS_ECHO("")
 AS_ECHO("")
 AS_ECHO("Configuration summary")
-AC_MSG_NOTICE(ocamlc $OCAMLC)
+AS_ECHO("ocamlc $OCAMLC")
 
 touch src/.depend

@@ -11,3 +11,10 @@ smtpp.opt
 /src/parser.ml
 /src/parser.mli
 /src/.depend
+/Config.mk
+/autom4te.cache/
+/config.log
+/config.status
+/tests/test_parser
+/tests/tester
+/configure

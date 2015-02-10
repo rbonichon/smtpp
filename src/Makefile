@@ -4,14 +4,16 @@ NAT=$(EXE).opt
 BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
 
+# Load the default OCaml rules from the file Config.mk
+# includes default settings
+include ../Config.mk
+
 # default target (activate when you invoke only 'make')
 default: $(BEST)
 
 # list of targets that should be recompiled every time
 .PHONY: default
 
-# Load the default OCaml rules from the file Caml.mk
-include ../Config.mk
 
 PARSER = parser
 LEXER = lexer
