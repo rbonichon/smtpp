@@ -18,8 +18,6 @@
 open Ast ;;
 open Format ;;
 
-module H = Hashtbl ;;
-
 exception Found of symbol ;;
 
 let pick_one h =
@@ -49,8 +47,8 @@ let add_sorted_symbol, _find_sorted_symbol, find_symbol =
         end;);
      newsymb
   ),
-  (fun symbol sort -> H.find (H.find h symbol) sort),
-  (fun symbol -> let hsort = H.find h symbol in pick_one hsort)
+  (fun symbol sort -> Hashtbl.find (Hashtbl.find h symbol) sort),
+  (fun symbol -> let hsort = Hashtbl.find h symbol in pick_one hsort)
 ;;
 
 let obfuscate_command cmd =
