@@ -71,7 +71,7 @@ AC_SUBST(MENHIR)
 AC_SUBST(OCAMLDOC)
 AC_SUBST(OCAMLBEST)
 AC_SUBST(HEADACHE)
-AC_SUBST(OCAMLBEST)
+
 
 AC_CONFIG_FILES([Config.mk], [chmod a-w Config.mk])
 AC_OUTPUT
@@ -79,6 +79,16 @@ AC_OUTPUT
 AS_ECHO("")
 AS_ECHO("")
 AS_ECHO("Configuration summary")
-AS_ECHO("ocamlc $OCAMLC")
+AS_ECHO("---------------------")
+AS_ECHO("ocamlc: $OCAMLC")
+AS_ECHO("ocamlopt: $OCAMLOPT")
+AS_ECHO("ocamldep: $OCAMLDEP")
+AS_ECHO("ocamllex: $OCAMLLEX")
+AS_ECHO("menhir: $MENHIR")
+AS_ECHO("ocamldoc: $OCAMLDOC")
+AS_ECHO("target: $OCAMLBEST")
+AS_ECHO("headache: $HEADACHE")
+
+
 
 touch src/.depend
