@@ -18,6 +18,7 @@ else
     if test "$OCAMLCDOTOPT" != no; then
         OCAMLC=$OCAMLCDOTOPT
     fi
+    OCAMLCVERSION=`$OCAMLC -version`
     OCAMLBEST=byt
 fi
 
@@ -31,12 +32,15 @@ else
     if test "$OCAMLOPTDOTOPT" != no; then
         OCAMLOPT=$OCAMLOPTDOTOPT
     fi
+    OCAMLOPTVERSION=`$OCAMLOPT -version`
     OCAMLBEST=opt
 fi
 
 # ocamldep
 AC_CHECK_PROG(OCAMLDEP,ocamldep,ocamldep, no)
 has_or_die $OCAMLDEP "Could not find ocamldep"
+OCAMLDEPVERSION=`ocamldep -version | sed -e 's/ocamldep, version \(.*\)/\1/'`
+
 
 # ocamllex
 AC_CHECK_PROG(OCAMLLEX,ocamllex,ocamllex,no)
@@ -53,6 +57,8 @@ has_or_die $MENHIR  "could not find menhir"
 AC_CHECK_PROG(OCAMLDOC, ocamldoc, ocamldoc, no)
 if test "$OCAMLDOC" = no; then
     AC_MSG_WARN("Documentation generation disabled.")
+else
+    OCAMLDOCVERSION=`ocamldoc -version`
 fi
 
 ## headache
@@ -80,12 +86,12 @@ AS_ECHO("")
 AS_ECHO("")
 AS_ECHO("Configuration summary")
 AS_ECHO("---------------------")
-AS_ECHO("ocamlc: $OCAMLC")
-AS_ECHO("ocamlopt: $OCAMLOPT")
-AS_ECHO("ocamldep: $OCAMLDEP")
+AS_ECHO("ocamlc: $OCAMLC $OCAMLCVERSION")
+AS_ECHO("ocamlopt: $OCAMLOPT $OCAMLOPTVERSION")
+AS_ECHO("ocamldep: $OCAMLDEP $OCAMLDEPVERSION")
 AS_ECHO("ocamllex: $OCAMLLEX")
 AS_ECHO("menhir: $MENHIR")
-AS_ECHO("ocamldoc: $OCAMLDOC")
+AS_ECHO("ocamldoc: $OCAMLDOC $OCAMLDOCVERSION")
 AS_ECHO("target: $OCAMLBEST")
 AS_ECHO("headache: $HEADACHE")
 
