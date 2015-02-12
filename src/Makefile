@@ -14,12 +14,11 @@ default: $(BEST)
 # list of targets that should be recompiled every time
 .PHONY: default
 
-
 PARSER = parser
 LEXER = lexer
 MLFILES_PRE = config utils locations io pp
 MLFILES_TRANS = pushpop obfuscator
-MLFILES_POST = main
+MLFILES_POST = do_parse main
 MLIFILES = ast
 OTHERFILES = $(PARSER:%=%.mly) $(LEXER=%=%.mll)
 SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
