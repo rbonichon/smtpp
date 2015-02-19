@@ -51,6 +51,37 @@ let add_sorted_symbol, _find_sorted_symbol, find_symbol =
   (fun symbol -> let hsort = Hashtbl.find h symbol in pick_one hsort)
 ;;
 
+let add_symb =
+  let h = Hashtbl.create 97 in
+  let n = ref (-1) in
+  let base = "S" in
+  (fun symb ->
+    incr n;
+    let newsymb =
+      { symb with symbol_desc = SimpleSymbol (base ^ (string_of_int !n)) }
+    in
+      Hashtbl.add h newsymb symb;
+    symb
+  )
+;;
+
+let obfuscate_fun_def fdef =
+  match fdef.fun_def_desc with
+  | FunDef (symb, par, vars, sort, t) ->
+      let s = add_symb symb in
+      FunDef (s, par, vars, sort, t);
+  fdef
+;;
+
+let obfuscate_fun_rec_defs frecdec =
+  let fun_rec_def_desc =
+    match frecdec.fun_rec_def_desc with
+    | FunRecDef (symb, par, vars, sort, t) ->
+        let s = add_symb symb in
+        FunRecDef (s, par, vars, sort, t)
+  in { frecdec with fun_rec_def_desc }
+;;
+
 let obfuscate_command cmd =
   let command_desc =
     match cmd.command_desc with
@@ -70,8 +101,15 @@ let obfuscate_command cmd =
     | CmdGetInfo _
     | CmdMetaInfo _ as c -> c
     | CmdDeclareConst (symb, sort)  ->
-       let s = add_sorted_symbol symb sort in
+        let s = add_symb symb in
        CmdDeclareConst (s, sort)
+    | CmdDeclareFun (symb, par, dom, codom) ->
+        let s = add_symb symb in
+       CmdDeclareFun (s, par, dom, codom)
+    | CmdDefineFun (fdef) ->
+        CmdDefineFun(obfuscate_fun_def fdef)
+    | CmdDefineFunRec (frecdeflist) ->
+       CmdDefineFunRec (List.map obfuscate_fun_rec_defs frecdeflist)
     | CmdCheckSatAssuming symbs ->
        CmdCheckSatAssuming (List.map find_symbol symbs)
   in { cmd with command_desc }
