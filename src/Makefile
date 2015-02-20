@@ -3,6 +3,7 @@ EXE=smtpp
 NAT=$(EXE).opt
 BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
+LIB=lib$(EXE).a
 
 # Load the default OCaml rules from the file Config.mk
 # includes default settings
@@ -18,7 +19,8 @@ PARSER = parser
 LEXER = lexer
 MLFILES_PRE = config utils locations io pp
 MLFILES_TRANS = pushpop obfuscator
-MLFILES_POST = do_parse main
+MLFILES_POST = do_parse
+MAIN = main
 MLIFILES = ast
 OTHERFILES = $(PARSER:%=%.mly) $(LEXER=%=%.mll)
 SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
@@ -28,13 +30,21 @@ SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
 SRCFILES = $(SRCMLFILES) $(OTHERFILES)
 GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
 CAMLFILES = $(SRCMLFILES) $(GENFILES)
-CMXFILES = $(MLFILES_PRE:%=%.cmx) \
+
+CMXFILES_LIB = $(MLFILES_PRE:%=%.cmx) \
 	$(LEXER:%=%.cmx) \
 	$(PARSER:%=%.cmx) \
 	$(MLFILES_TRANS:%=%.cmx) \
 	$(MLFILES_POST:%=%.cmx)
+CMOFILES_LIB = $(CMXFILES_LIB:%.cmx=%.cmo)
+
 CMIFILES = $(MLIFILES:%=%.cmi)
+CMXFILES = $(CMXFILES_LIB) $(MAIN:%=%.cmx)
 CMOFILES = $(CMXFILES:%.cmx=%.cmo)
+CFILES = libwrap
+CSRC = $(CFILES:%=%.c)
+COBJS = $(CFILES:%=%.o)
+MLOBJS = $(CMXFILES:%.cmx=%.o)
 
 LIBS =
 OPTLIBDEPS = $(LIBS:%=%.cmxa)
@@ -56,12 +66,16 @@ byt: $(BYT)
 $(SNAT): depend $(CMXFILES)
 	@echo "STATIC $@"
 	$(CAMLBIN) $(CAMLINCLUDES) -noautolink -o $@ $(OPTLIBDEPS) $(CMXFILES) -cclib '-static'
-
 clean::
 	-$(RM) $(EXE) $(EXE).byt *.annot
+	-$(RM) *.a
 	for i in $(PARSER) $(LEXER); do\
 		$(RM) -f $$i.ml $$i.mli; \
 	done
+
+
+lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
+	ocamlmklib -verbose -custom -o smtpp $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
 
 .PHONY: beforedepend depend
 

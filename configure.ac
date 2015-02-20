@@ -34,12 +34,17 @@ else
     fi
     OCAMLOPTVERSION=`$OCAMLOPT -version`
     OCAMLBEST=opt
+    if test "$OCAMLOPTVERSION" ! "$OCAMLCVERSION"; then
+       AC_MSG_ERROR("OCaml's bytecode and optimized compilers have version number conflicts ($OCAMLCVERSION) vs ($OCAMLOPTVERSION) . Should be the same")
 fi
 
 # ocamldep
 AC_CHECK_PROG(OCAMLDEP,ocamldep,ocamldep, no)
 has_or_die $OCAMLDEP "Could not find ocamldep"
 OCAMLDEPVERSION=`ocamldep -version | sed -e 's/ocamldep, version \(.*\)/\1/'`
+if test "$OCAMLDEPVERSION" != "$OCAMLCVERSION"; then
+       AC_MSG_ERROR("ocamldep version $OCAMLCVERSION conflicts with ocamlc version $OCAMLCVERSION. Should be the same.")
+fi
 
 
 # ocamllex
