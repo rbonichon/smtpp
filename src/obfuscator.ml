@@ -53,7 +53,7 @@ let pick_one h =
  *   (fun symbol -> let hsort = Hashtbl.find h symbol in pick_one hsort)
  * ;; *)
 
-let get_symb =
+let get_symb, get_hashtable =
   let h = Hashtbl.create 97 in
   let n = ref (-1) in
   let base = "S" in
@@ -71,7 +71,8 @@ let get_symb =
         Hashtbl.add h symb newsymb;
         newsymb
       end
-  )
+  ),
+  (fun () ->  h)
 ;;
 
 let obfuscate_index = function
@@ -246,5 +247,13 @@ let obfuscate_commands cmds = List.map obfuscate_command cmds ;;
 let apply script =
   let script_commands = obfuscate_commands script.script_commands in
   let obfuscated_script = { script with script_commands } in
-  printf "%a" Pp.pp obfuscated_script
+  printf "%a" Pp.pp obfuscated_script;
+  if Config.get_debug () then
+    printf "@[<v 0>%a@ %a@]"
+           Utils.mk_header "Symbol table"
+           (fun fmt h ->
+            Hashtbl.iter
+              (fun k v ->
+               Format.fprintf fmt "%a -> %a@ " Pp.pp_symbol k Pp.pp_symbol v)
+              h) (get_hashtable ());
 ;;

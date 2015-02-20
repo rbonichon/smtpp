@@ -16,7 +16,7 @@
 (**************************************************************************)
 
 (* Default message to the user *)
-let umsg = "Usage: smtpoly <file>";;
+let umsg = "Usage: smtpp <file>";;
 
 (* Should we reprint the AST ? *)
 let reprint = ref false ;;
@@ -39,6 +39,8 @@ let rec argspec =
   " generates independent SMTLIB scripts for each (check-sat) command";
   "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess(false)),
   " do not print success while parsing";
+  "-obfuscate", Arg.Unit (fun () -> Config.set_obfuscate true),
+  " generates obfuscated version of SMT script";
 ]
 
 and print_usage () =
@@ -83,6 +85,7 @@ let main () =
      let script = Parser.script Lexer.token lexbuf in
      if Config.get_pushpop () then Pushpop.apply script;
      if !reprint then Pp.pp Format.std_formatter script;
+     if Config.get_obfuscate () then Obfuscator.apply script;
   with
   | Lexer.LexError msg ->
      Format.eprintf "Parse error: %s@." msg;
