@@ -56,7 +56,7 @@ and sexprs = sexpr list
 ;;
 
 type index =
-  | IdxNum of int
+  | IdxNum of numeral
   | IdxSymbol of symbol
 ;;
 
@@ -164,7 +164,8 @@ and term_desc =
   | TermSpecConstant of constant
   | TermQualIdentifier of qual_identifier
   | TermQualIdentifierTerms of qual_identifier * terms
-  | TermLetTerm of var_bindings * term  | TermForallTerm of sorted_vars * term
+  | TermLetTerm of var_bindings * term
+  | TermForallTerm of sorted_vars * term
   | TermExistsTerm of sorted_vars * term
   | TermAnnotatedTerm of term * attributes
 
