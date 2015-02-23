@@ -16,7 +16,7 @@
 (**************************************************************************)
 
 (* Default message to the user *)
-let umsg = "Usage: smtpoly <file>";;
+let umsg = "Usage: smtpp <file>";;
 
 
 (*
@@ -37,6 +37,8 @@ let rec argspec =
   " generates independent SMTLIB scripts for each (check-sat) command";
   "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess(false)),
   " do not print success while parsing";
+  "-obfuscate", Arg.Unit (fun () -> Config.set_obfuscate true),
+  " generates obfuscated version of SMT script";
 ]
 
 and print_usage () =

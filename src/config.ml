@@ -38,3 +38,5 @@ let set_pushpop, get_pushpop = genr_bool_switch () ;;
 let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;
 
 let set_reprint, get_reprint = genr_bool_switch () ;;
+
+let set_obfuscate, get_obfuscate = genr_bool_switch () ;;

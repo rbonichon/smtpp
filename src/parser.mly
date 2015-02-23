@@ -231,9 +231,15 @@ sort:
 | LPAREN id=identifier; sorts=sort+; RPAREN { mk_sort (SortFun (id, sorts)) }
 ;
 
+index:
+| NUMERAL { IdxNum $1 }
+| SYMBOL  { IdxSymbol (mk_symbol (SimpleSymbol $1)) }
+;
+
 identifier:
 | symb=symbol { mk_identifier (IdSymbol symb) }
-| UNDERSCORE symb=symbol { mk_identifier (IdUnderscore (symb, [])) }
+| UNDERSCORE symb=symbol indexes=index+
+  { mk_identifier (IdUnderscore (symb, indexes)) }
 ;
 
 symbol:
