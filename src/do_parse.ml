@@ -1,5 +1,4 @@
 open Lexing;;
-open Config ;;
 
 let report_error l  =
   let pos = lexeme_start_p l in
@@ -7,7 +6,6 @@ let report_error l  =
   Format.eprintf "Error in file %s, line %d, column %d@."
                  pos.pos_fname pos.pos_lnum o;
 ;;
-
 
 let lex_file () =
   try
@@ -43,3 +41,4 @@ let apply () =
   | Parser.Error  ->
      Format.eprintf "Parse error:@.";
      report_error lexbuf
+;;
