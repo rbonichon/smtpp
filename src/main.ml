@@ -35,17 +35,18 @@ let rec argspec =
   " enables debug messages";
   "-multi", Arg.Unit (fun () -> Config.set_pushpop true),
   " generates independent SMTLIB scripts for each (check-sat) command";
-  "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess(false)),
+  "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess false),
   " do not print success while parsing";
   "-obfuscate", Arg.Unit (fun () -> Config.set_obfuscate true),
   " generates obfuscated version of SMT script";
+  "-keep", Arg.String Config.set_keep_symbols,
+  " do not obfuscate this comma separated list of symbols";
 ]
 
 and print_usage () =
   Arg.usage (Arg.align argspec) umsg;
   exit 0;
 ;;
-
 
 let main () =
   Arg.parse argspec Config.set_file umsg;

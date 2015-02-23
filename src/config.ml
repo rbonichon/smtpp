@@ -40,3 +40,12 @@ let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;
 let set_reprint, get_reprint = genr_bool_switch () ;;
 
 let set_obfuscate, get_obfuscate = genr_bool_switch () ;;
+
+let set_keep_symbols, get_keep_symbols =
+  let ks = ref [] in
+  let sep = Str.regexp "[ ]*,[ ]*" in
+  (fun (s:string) ->
+   ks := Str.split sep s;
+  ),
+  (fun () -> !ks)
+;;

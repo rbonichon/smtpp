@@ -18,48 +18,35 @@
 open Ast ;;
 open Format ;;
 
-  (*
-exception Found of symbol ;;
+module HashedSymb = struct
+    type t = Ast.symbol ;;
 
-let pick_one h =
-  try Hashtbl.iter (fun _ v -> raise (Found v)) h;
-      assert false; (* Should not get here *)
-  with Found v -> v
+    let equal sy1 sy2 =
+      match sy1.symbol_desc, sy2.symbol_desc with
+      | SimpleSymbol s1, SimpleSymbol s2
+      | QuotedSymbol s1, QuotedSymbol s2 -> String.compare s1 s2 = 0
+      | _, _ -> false
+    ;;
+
+    let hash sy = Hashtbl.hash sy.symbol_desc ;;
+  end
 ;;
- *)
 
-(* let add_sorted_symbol, _find_sorted_symbol, find_symbol =
- *   let h = Hashtbl.create 97 in
- *   let n = ref (-1) in
- *   let base = "S" in
- *   (fun symbol sort ->
- *    incr n;
- *    let newsymb =
- *      { symbol with symbol_desc = SimpleSymbol (base ^ (string_of_int !n)) }
- *    in
- *    (try
- *        let hsort = Hashtbl.find h symbol in
- *        Hashtbl.add hsort sort newsymb
- *      with
- *      | Not_found ->
- *         begin
- *           let hsort = Hashtbl.create 7 in
- *           Hashtbl.add hsort sort newsymb;
- *           Hashtbl.add h symbol hsort;
- *         end;);
- *      newsymb
- *   ),
- *   (fun symbol sort -> Hashtbl.find (Hashtbl.find h symbol) sort),
- *   (fun symbol -> let hsort = Hashtbl.find h symbol in pick_one hsort)
- * ;; *)
+module SymbHash = Hashtbl.Make(HashedSymb) ;;
 
-let get_symb, get_hashtable =
-  let h = Hashtbl.create 97 in
+let mk_symbol (s:string) =
+  { symbol_desc = SimpleSymbol s;
+    symbol_loc = Locations.dummy_loc;
+  }
+;;
+
+let get_symb, init, get_hashtable =
+  let h = SymbHash.create 97 in
   let n = ref (-1) in
   let base = "S" in
   (fun symb ->
    try
-     let sy = Hashtbl.find h symb in
+     let sy = SymbHash.find h symb in
      sy
    with
    | Not_found ->
@@ -68,9 +55,17 @@ let get_symb, get_hashtable =
         let newsymb =
           { symb with symbol_desc = SimpleSymbol (base ^ (string_of_int !n)) }
         in
-        Hashtbl.add h symb newsymb;
+        SymbHash.add h symb newsymb;
         newsymb
       end
+  ),
+  (fun () ->
+   let l = Config.get_keep_symbols () in
+   List.iter
+     (fun s ->
+      let sy = mk_symbol s in
+      SymbHash.add h sy sy
+     ) l;
   ),
   (fun () ->  h)
 ;;
@@ -245,6 +240,7 @@ let obfuscate_command cmd =
 let obfuscate_commands cmds = List.map obfuscate_command cmds ;;
 
 let apply script =
+  init (); (* Init hash table with symbols that should be kept *)
   let script_commands = obfuscate_commands script.script_commands in
   let obfuscated_script = { script with script_commands } in
   printf "%a" Pp.pp obfuscated_script;
@@ -252,7 +248,7 @@ let apply script =
     printf "@[<v 0>%a@ %a@]"
            Utils.mk_header "Symbol table"
            (fun fmt h ->
-            Hashtbl.iter
+            SymbHash.iter
               (fun k v ->
                Format.fprintf fmt "%a -> %a@ " Pp.pp_symbol k Pp.pp_symbol v)
               h) (get_hashtable ());
