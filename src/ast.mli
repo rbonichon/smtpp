@@ -238,6 +238,14 @@ type command = {
   }
 ;;
 
+type pred_operator =
+  | PredOp of symbol * sorts option * sorts * sort
+
+type pred_operators = pred_operator list ;;
+
+type theory =
+  | Theory of symbol * pred_operators 
+
 type commands = command list ;;
 
 type script = {
