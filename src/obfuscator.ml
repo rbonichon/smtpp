@@ -34,34 +34,6 @@ module HashedSymb = struct
 
 module SymbHash = Hashtbl.Make(HashedSymb) ;;
 
-(*
-let add_quantifiers, add_ints, add_reals, add_reals_ints
-
-(* To test or not to test whether a logic has already been setted??? *)
-let set_logic (sy:symbol) =
-  let symbol_desc =
-    match sy.symbol_desc with
-    | SimpleSymbol s -> 
-        match s with
-        | "AUFLIA" -> (add_quantifiers; add_ints; 
-                      add_arraysex; add_arith_constants)
-        | "AUFLIRA"
-        | "AUFNIRA" -> (add_quantifiers; add_reals_ints;
-                        add_arraysex;  add_arith_constants)
-        | "LRA" 
-        | "UFLRA" -> (add_quantifiers; add_reals; add_arith_constants)
-
-        | "QF_AUFLIA" -> (add_ints; add_arraysex; add_arith_constants)
-
-        | "QF_AX" -> (add_arraysex)
-        | "QF_IDL" | "QF_LIA" | "QF_NIA"
-        | "QF_UFIA"-> (add_ints; add_constants)
-        | "QF_LRA" | "QF_NRA" | "QF_RDL" | "QF_UFLRA"
-        | "QF_UFNRA" -> (add_reals; add_constants)
-        | "UFNIA" -> (add_quantifiers; add_ints; add_arith_constants)
-        | _ -> (* error *)
-    in {sy with symbol_desc}
-*)
 let mk_symbol (s:string) =
   { symbol_desc = SimpleSymbol s;
     symbol_loc = Locations.dummy_loc;
@@ -260,7 +232,6 @@ let obfuscate_command cmd =
     | CmdSetInfo attr ->
        CmdSetInfo (obfuscate_attribute attr)
     | CmdSetOption opt -> CmdSetOption (obfuscate_opt opt)
-(*    | CmdSetLogic (symb) -> (set_logic symb); CmdSetLogic(symb) *)
 
   in { cmd with command_desc }
 ;;
