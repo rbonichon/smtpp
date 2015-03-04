@@ -49,6 +49,7 @@ and print_usage () =
 ;;
 
 let main () =
+  Config.set_preprocessor true;
   Arg.parse argspec Config.set_file umsg;
   Do_parse.apply ()
 ;;
