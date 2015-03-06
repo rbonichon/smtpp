@@ -12,12 +12,13 @@ include ../Config.mk
 # default target (activate when you invoke only 'make')
 default: $(BEST)
 
+
 # list of targets that should be recompiled every time
 .PHONY: default
 
 PARSER = parser
 LEXER = lexer
-MLFILES_PRE = config utils locations io pp
+MLFILES_PRE = utils config locations io pp
 MLFILES_TRANS = pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main

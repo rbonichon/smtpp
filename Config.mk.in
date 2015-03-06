@@ -12,6 +12,8 @@ CAMLDOC=@OCAMLDOC@
 HEADACHE=@HEADACHE@
 BEST=@OCAMLBEST@
 
+default: $(BEST)
+
 .PHONY: default all bin byt clean cleandir configure depend beforedepend
 
 # Compilation rules

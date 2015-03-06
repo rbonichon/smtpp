@@ -12,6 +12,8 @@ CAMLDOC=ocamldoc
 HEADACHE=headache
 BEST=opt
 
+default: $(BEST)
+
 .PHONY: default all bin byt clean cleandir configure depend beforedepend
 
 # Compilation rules
