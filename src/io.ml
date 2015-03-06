@@ -21,3 +21,8 @@ open Format
 let not_yet_implemented (msg:string) =
   failwith (sprintf "not yet implemented: %s@." msg)
 ;;
+
+let debug s =
+  if Config.get_debug () then
+    Format.printf "@[<hov 1>[debug] %s@]@." s
+;;
