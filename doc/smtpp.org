@@ -1,0 +1,61 @@
+#+title: SMTpp
+#+author: Richard Bonichon & Cláudia Tavares
+#+options: toc:nil
+
+* Introduction
+
+~SMTpp~ is a pre-processor for SMT-LIB v2, with preliminary support for the
+2.5 draft version. The tool is written in ~OCaml~.
+
+The goal of the tool is to gather common functionalities that most or all SMT
+provers need to do before any SMT reasoning takes place.
+
+The project has its root in the ~veriT~ prover as a way to separate symbolic
+steps from the reasoner's core. The effect we expect to achieve is to benefit
+from ~OCaml~ to implement symbolic reasoning while retaining C's speed factor
+for the core. As a result, we would like for the pre-processor not to affect the
+performance too much.
+
+The tool can also be seen as a Swiss-army knife for pre-processing, and each
+plug-in should do one thing and do it well. Separates plug-ins can be chained
+through Unix pipes.
+
+
+* Plug-ins
+
+** Parser + pretty-printer
+
+** Obfuscator
+   :PROPERTIES:
+   :CUSTOM_ID: obfuscator
+   :END:
+
+Obfuscating code is a task that is needed in at last two cases:
+- Scripts produced from industrial cases might need to be hidden in some
+  respect.
+- Even the SMT-competition field by making possibly hard-coded SMT solvers less
+  relevant.
+
+** SMT 2 SMTs
+
+Some solvers do not handle the full extent of the SMT-LIB reference.
+For example, ~veriT~ is one solver that does not handle ~push~ and ~pop~
+directive.
+
+The ~multi~ analyzer will producer multiple SMT-LIB scripts from one SMT-LIB
+scripts with multiple ~check-sat~ directives. The produced scripts contain only
+the potentially relevant formulas from a scope perspective. In the meantime,
+~push~ and ~pop~ directives are interpreted. This means they are absent from the
+results. As such, ~veriT~ is able to handle the following example:
+
+#+begin_src C
+
+#+end_src
+
+** Monomorphizer
+
+** Normalizer
+
+Normalizing the formulas to be treated is a task that SMT-solver needs to
+
+* Preliminary benchmarks
