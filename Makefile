@@ -1,6 +1,6 @@
 default: exe
 
-all: exe doc test
+all: static exe doc test
 
 SRCDIR=src
 TESTDIR=tests
@@ -18,3 +18,6 @@ test: exe
 
 doc:
 	(cd $(SRCDIR); $(MAKE) doc)
+
+static:
+	(cd $(SRCDIR); $(MAKE) static)

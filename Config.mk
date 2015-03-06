@@ -5,6 +5,7 @@ CAMLLEXOPTS=
 CAMLYAC=menhir
 CAMLYACOPTS=
 RM=rm -f
+MKDIR=mkdir -p
 CAMLDEP=ocamldep
 CAMLFLAGS=-w +a-4 -g -annot
 CAMLDOC=ocamldoc
