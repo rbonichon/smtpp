@@ -20,3 +20,4 @@ smtpp.opt
 /configure
 /src/parser.automaton
 /src/parser.conflicts
+/src/static_smtpp.opt

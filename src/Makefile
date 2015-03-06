@@ -47,7 +47,7 @@ CSRC = $(CFILES:%=%.c)
 COBJS = $(CFILES:%=%.o)
 MLOBJS = $(CMXFILES:%.cmx=%.o)
 
-LIBS = str
+LIBS =
 OPTLIBDEPS = $(LIBS:%=%.cmxa)
 LIBDEPS = $(LIBS:%=%.cma)
 
