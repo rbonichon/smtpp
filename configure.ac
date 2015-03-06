@@ -34,8 +34,9 @@ else
     fi
     OCAMLOPTVERSION=`$OCAMLOPT -version`
     OCAMLBEST=opt
-    if test "$OCAMLOPTVERSION" ! "$OCAMLCVERSION"; then
+    if test "$OCAMLOPTVERSION" != "$OCAMLCVERSION"; then
        AC_MSG_ERROR("OCaml's bytecode and optimized compilers have version number conflicts ($OCAMLCVERSION) vs ($OCAMLOPTVERSION) . Should be the same")
+    fi
 fi
 
 # ocamldep
@@ -46,18 +47,15 @@ if test "$OCAMLDEPVERSION" != "$OCAMLCVERSION"; then
        AC_MSG_ERROR("ocamldep version $OCAMLCVERSION conflicts with ocamlc version $OCAMLCVERSION. Should be the same.")
 fi
 
-
 # ocamllex
 AC_CHECK_PROG(OCAMLLEX,ocamllex,ocamllex,no)
 has_or_die $OCAMLLEX "Could not find ocamllex"
 
 # menhir
 AC_CHECK_PROG(MENHIR,menhir,menhir,no)
-has_or_die $MENHIR  "could not find menhir"
-
+has_or_die $MENHIR  "Could not find menhir"
 
 # Optional libraries #
-
 ## ocamldoc
 AC_CHECK_PROG(OCAMLDOC, ocamldoc, ocamldoc, no)
 if test "$OCAMLDOC" = no; then
@@ -87,6 +85,9 @@ AC_SUBST(HEADACHE)
 AC_CONFIG_FILES([Config.mk], [chmod a-w Config.mk])
 AC_OUTPUT
 
+AS_ECHO(".depend: touching src/.depend")
+touch src/.depend
+
 AS_ECHO("")
 AS_ECHO("")
 AS_ECHO("Configuration summary")
@@ -99,7 +100,3 @@ AS_ECHO("menhir: $MENHIR")
 AS_ECHO("ocamldoc: $OCAMLDOC $OCAMLDOCVERSION")
 AS_ECHO("target: $OCAMLBEST")
 AS_ECHO("headache: $HEADACHE")
-
-
-
-touch src/.depend

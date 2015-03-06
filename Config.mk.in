@@ -5,60 +5,41 @@ CAMLLEXOPTS=
 CAMLYAC=@MENHIR@
 CAMLYACOPTS=
 RM=rm -f
+MKDIR=mkdir -p
 CAMLDEP=@OCAMLDEP@
 CAMLFLAGS=-w +a-4 -g -annot
 CAMLDOC=@OCAMLDOC@
 HEADACHE=@HEADACHE@
 BEST=@OCAMLBEST@
+VERBOSEMAKE?=no
 
-.PHONY: default all bin byt clean cleandir configure depend beforedepend
+ifneq ($(VERBOSEMAKE),no) # Do not change to ifeq ($(VERBOSEMAKE),yes), as this
+			  # version makes it easier for the user to set the
+			  # option on the command-line to investigate
+			  # Makefile-related problems
+# ignore the PRINT_* materials but print all the other commands
+  PP = @true
+# prevent the warning "jobserver unavailable: using -j1".
+# see GNU make manual (section 5.7.1 and appendix B)
+  QUIET_MAKE:= + $(MAKE)
+# prevent the warning: "-jN forced in submake: disabling jobserver mode".
+# see GNU make manual (appendix B)
+  MAKE := MAKEFLAGS="$(patsubst j,,$(MAKEFLAGS))" $(MAKE)
+else
+# print the PP_* materials
+  PP = @echo
+# but silently execute all the other commands
+# fixed bug #637: do not write spaces between flags
+  OLDFLAGS:=r$(MAKEFLAGS)
+  MAKEFLAGS:=rs$(MAKEFLAGS)
+# do not silently execute other makefiles (e.g the one of why):
+# the redefinition of MAKE below is for this purpose
+# but use QUIET_MAKE in order to call silently the initial Makefile
+  QUIET_MAKE:= $(MAKE)
+  MAKE := MAKEFLAGS="$(OLDFLAGS)" $(MAKE)
+endif
 
-# Compilation rules
-.SUFFIXES: .o .c
-.SUFFIXES: .cmx .cmxa .cmo .cmi .cma .ml .mli .mll .mly
-
-
-.cmx.o:
-	$(CAMLBIN) -output-obj -o $@ $<
-
-.c.o:
-	$(CAMLBIN) -ccopt "-fPIC -o $@" -c $<
-
-.ml.cmo:
-	@echo "BYT $<"
-	@$(CAMLBYT)  $(CAMLINCLUDES) $(CAMLFLAGS) -c $<
-
-.mli.cmi:
-	@echo "INT $<"
-	@$(CAMLBYT)  $(CAMLINCLUDES) -c $<
-
-.ml.cmx:
-	@echo "OPT $<"
-	@$(CAMLBIN) $(CAMLINCLUDES) $(CAMLFLAGS) -c  $<
-
-.mly.ml:
-	@echo "YACC $<"
-	@$(CAMLYAC) $(CAMLYACOPTS) $<
-
-.mly.mli:
-	@echo "YACC $<"
-	$(CAMLYAC)  $(CAMLYACOPTS) $<
-
-.mll.ml:
-	@echo "LEX $<"
-	@$(CAMLLEX) $(CAMLLEXOPTS) $<
-
-# Generic clean up
-cleandir::
-	$(RM) *.cm[ioxa] *.cmxa *.o *.a *.annot *.obj *.lib *~ .*~ a.out .\#*
-
-clean:: cleandir
-	($(MAKE) depend) || exit $$?
-
-configure:: cleandir
-
-# Rebuilding dependencies
-depend::
-	$(CAMLDEP) $(CAMLINCLUDES) $(CAMLFILES) > .depend
-
-include .depend
+PP_BYT   = $(PP) 'BYT  '
+PP_OPT   = $(PP) 'BIN  '
+PP_YACC  = $(PP) 'YACC '
+PP_LEX   = $(PP) 'LEX  '

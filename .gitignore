@@ -18,3 +18,6 @@ smtpp.opt
 /tests/test_parser
 /tests/tester
 /configure
+/src/parser.automaton
+/src/parser.conflicts
+/src/static_smtpp.opt

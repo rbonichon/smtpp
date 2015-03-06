@@ -40,10 +40,6 @@ let mk_header fmt s =
   Format.fprintf fmt "@[<v 0>%s@ %s@ @]" s sub_hdr
 ;;
 
-let debug s =
-  if Config.get_debug () then
-    Format.printf "@[<hov 1>[debug] %s@]@." s
-;;
 
 let sfprintf fmt =
   let b = Buffer.create 20 in
@@ -56,5 +52,31 @@ let default_opt v opt =
   | None -> v
   | Some v' -> v'
 ;;
-  
+
 let third (_, _, z) = z ;;
+
+(* Extract the substring from [beg_idx] to [end_idx included from [s] *)
+let string_extract s beg_idx end_idx =
+  String.sub s beg_idx (end_idx - beg_idx + 1)
+;;
+
+(* Make a list of all substrings from [s] separated by character [c] *)
+let string_explode c s =
+  let len = String.length s in
+  let rec aux last_idx l =
+    try
+      if last_idx >= len then List.rev l
+      else
+        begin
+          let idx = String.index_from s last_idx c in
+          if idx = last_idx then aux (idx + 1) l
+          else
+            let s = string_extract s last_idx (idx - 1) in
+            let new_list = s :: l in
+            aux (idx + 1) new_list
+        end
+    with
+      | Not_found ->
+        List.rev ((string_extract s last_idx (len - 1)) :: l)
+  in aux 0 []
+;;
