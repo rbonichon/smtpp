@@ -53,10 +53,12 @@ OPTLIBDEPS = $(LIBS:%=%.cmxa)
 LIBDEPS = $(LIBS:%=%.cma)
 
 $(NAT): depend $(CMXFILES)
+	$(PP) "LINK  $@"
 	$(CAMLBIN) $(CAMLINCLUDES) -o $@ $(OPTLIBDEPS) $(CMXFILES)
 
 
 $(BYT): depend $(CMIFILES) $(CMOFILES)
+	$(PP) "LINK  $@"
 	$(CAMLBYT) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMOFILES)
 
 static: $(SNAT)
@@ -64,6 +66,7 @@ opt: $(NAT)
 byt: $(BYT)
 
 $(SNAT): depend $(CMXFILES)
+	$(PP) "STATIC $@"
 	$(CAMLBIN) $(CAMLINCLUDES) -noautolink -o $@ $(OPTLIBDEPS) $(CMXFILES) -cclib '-static'
 clean::
 	-$(RM) $(EXE) $(EXE).byt *.annot

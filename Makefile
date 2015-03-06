@@ -2,12 +2,13 @@ default: exe
 
 include ./Config.mk
 
-all: static exe doc test
+all: exe static doc test
 
 SRCDIR=src
 TESTDIR=tests
 
 exe:
+	$(PP) "Executable ..."
 	$(QUIET_MAKE) -C $(SRCDIR) clean depend;
 	$(QUIET_MAKE) -C $(SRCDIR) default;
 
@@ -17,10 +18,11 @@ clean::
 	(cd $(SRCDIR); $(MAKE) clean)
 
 test: exe
-	@echo "Testing"
+	$(PP) "Testing"
 
 doc:
-	(cd $(SRCDIR); $(MAKE) doc)
+	$(QUIET_MAKE) -C doc
 
 static:
-	(cd $(SRCDIR); $(MAKE) static)
+	$(PP) "Static binary ..."
+	$(QUIET_MAKE) -C $(SRCDIR) static;
