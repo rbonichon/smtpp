@@ -34,7 +34,7 @@ else
     fi
     OCAMLOPTVERSION=`$OCAMLOPT -version`
     OCAMLBEST=opt
-    if test "$OCAMLOPTVERSION" ! "$OCAMLCVERSION"; then
+    if test "$OCAMLOPTVERSION" != "$OCAMLCVERSION"; then
        AC_MSG_ERROR("OCaml's bytecode and optimized compilers have version number conflicts ($OCAMLCVERSION) vs ($OCAMLOPTVERSION) . Should be the same")
     fi
 fi

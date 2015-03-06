@@ -12,6 +12,7 @@ include ../Config.mk
 # default target (activate when you invoke only 'make')
 default: $(BEST)
 
+include ../Caml.mk
 
 # list of targets that should be recompiled every time
 .PHONY: default
@@ -52,24 +53,21 @@ OPTLIBDEPS = $(LIBS:%=%.cmxa)
 LIBDEPS = $(LIBS:%=%.cma)
 
 $(NAT): depend $(CMXFILES)
-	@echo "EXE $@"
-	@$(CAMLBIN) $(CAMLINCLUDES) -o $@ $(OPTLIBDEPS) $(CMXFILES)
+	$(CAMLBIN) $(CAMLINCLUDES) -o $@ $(OPTLIBDEPS) $(CMXFILES)
 
 
 $(BYT): depend $(CMIFILES) $(CMOFILES)
-	@echo "EXE $@"
-	@$(CAMLBYT) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMOFILES)
+	$(CAMLBYT) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMOFILES)
 
 static: $(SNAT)
 opt: $(NAT)
 byt: $(BYT)
 
 $(SNAT): depend $(CMXFILES)
-	@echo "STATIC $@"
 	$(CAMLBIN) $(CAMLINCLUDES) -noautolink -o $@ $(OPTLIBDEPS) $(CMXFILES) -cclib '-static'
 clean::
 	-$(RM) $(EXE) $(EXE).byt *.annot
-	-$(RM) *.a
+	-$(RM) *.a $(PARSER).automaton $(PARSER).conflicts
 	for i in $(PARSER) $(LEXER); do\
 		$(RM) -f $$i.ml $$i.mli; \
 	done
@@ -91,7 +89,6 @@ depend:: beforedepend $(CAMLFILES)
 
 ifneq ($(HEADACHE),no)
 license:
-	@echo "Adding license prelude to files"
 	@for i in $(SRCFILES); do \
 		headache -r -h ../LICENSE $$i; \
 	done

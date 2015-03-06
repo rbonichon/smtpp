@@ -1,16 +1,19 @@
 default: exe
 
+include ./Config.mk
+
 all: static exe doc test
 
 SRCDIR=src
 TESTDIR=tests
 
 exe:
-	(cd $(SRCDIR); $(MAKE) clean depend; $(MAKE) default)
+	$(QUIET_MAKE) -C $(SRCDIR) clean depend;
+	$(QUIET_MAKE) -C $(SRCDIR) default;
 
 .PHONY: test
 
-clean:
+clean::
 	(cd $(SRCDIR); $(MAKE) clean)
 
 test: exe
