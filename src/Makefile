@@ -37,7 +37,8 @@ CMXFILES_LIB = $(MLFILES_PRE:%=%.cmx) \
 	$(LEXER:%=%.cmx) \
 	$(PARSER:%=%.cmx) \
 	$(MLFILES_TRANS:%=%.cmx) \
-	$(MLFILES_POST:%=%.cmx)
+	$(MLFILES_POST:%=%.cmx) \
+	smtpplib.cmx
 CMOFILES_LIB = $(CMXFILES_LIB:%.cmx=%.cmo)
 
 CMIFILES = $(MLIFILES:%=%.cmi)
