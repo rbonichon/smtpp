@@ -47,7 +47,7 @@ CMOFILES = $(CMXFILES:%.cmx=%.cmo)
 CFILES = libwrap
 CSRC = $(CFILES:%=%.c)
 COBJS = $(CFILES:%=%.o)
-MLOBJS = $(CMXFILES:%.cmx=%.o)
+MLOBJS = $(CMOFILES:%.cmo=%.o)
 
 LIBS =
 OPTLIBDEPS = $(LIBS:%=%.cmxa)
@@ -77,8 +77,11 @@ clean::
 	done
 
 
-lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
-	ocamlmklib -verbose -custom -o smtpp $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
+lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(MLOBJS) $(COBJS)
+	ocamlmklib -verbose -o smtpp $(CMOFILES_LIB) $(MLOBJS) $(COBJS)
+#	ocamlmklib -verbose -o smtpp $(CMXFILES_LIB)
+#	ocamlmklib -verbose -o smtpp $(COBJS)
+# ocamlmklib -verbose -custom -o smtpp $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
 
 .PHONY: beforedepend depend
 

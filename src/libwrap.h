@@ -1,1 +1,1 @@
-void parse(void);
+void parse_file(char *filename);
