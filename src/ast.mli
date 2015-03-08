@@ -15,10 +15,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
-type numeral = int ;;
+type numeral = string ;;
 
 type constant =
-  | CstNumeral of numeral
+  | CstNumeral of numeral (* Better to use a string than an int here as
+                          * int_of_string can fail *)
   | CstDecimal of string
   | CstHexadecimal of string
   | CstBinary of string

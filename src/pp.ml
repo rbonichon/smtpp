@@ -33,12 +33,12 @@ let pp_list pp_f fmt elts =
   let rec pp_list_aux fmt = function
     | [] -> ()
     | [e] -> fprintf fmt "%a" pp_f e
-    | e :: es -> fprintf fmt "%a@ %a" pp_f e pp_list_aux es 
+    | e :: es -> fprintf fmt "%a@ %a" pp_f e pp_list_aux es
   in pp_list_aux fmt elts;
   fprintf fmt "@]";
 ;;
 
-let pp_numeral fmt n = fprintf fmt "%n" n ;;
+let pp_numeral fmt n = fprintf fmt "%s" n ;;
 
 let pp_symbol fmt symb =
   match symb.symbol_desc with
@@ -52,7 +52,7 @@ let pp_keyword fmt kwd = fprintf fmt ":%s" kwd ;;
 
 let pp_spec_constant fmt = function
   | CstBool b -> fprintf fmt "%b" b
-  | CstNumeral n -> fprintf fmt "%d" n
+  | CstNumeral n -> fprintf fmt "%s" n
   | CstBinary str -> fprintf fmt "#b%s" str
   | CstDecimal str -> fprintf fmt "%s" str
   | CstHexadecimal str -> fprintf fmt "#x%s" str
@@ -260,7 +260,7 @@ let pp_cmd fmt cmd =
   | CmdPush (Some n) ->
      fprintf fmt "push@ %a" pp_numeral n
   | CmdPop None ->
-     fprintf fmt "pop" 
+     fprintf fmt "pop"
   | CmdPush None  ->
      fprintf fmt "push"
   | CmdReset ->
