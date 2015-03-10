@@ -5,6 +5,7 @@ BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
 LIB=lib$(EXE).a
 
+VERSION=$(shell git log -1 --format="%H (%ai)")
 # Load the default OCaml rules from the file Config.mk
 # includes default settings
 include ../Config.mk
@@ -88,6 +89,7 @@ lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(MLOBJS) $(COBJS)
 # There are genereated files so we might need to do depend twice
 # beforedepend serves exactly that purpose
 beforedepend: $(CAMLFILES)
+	sed -i -e 's/let version = ".*"/let version = "$(VERSION)"/g' config.ml
 	$(CAMLDEP) $(CAMLINCLUDES) $(CAMLFILES) > .depend
 
 depend:: beforedepend $(CAMLFILES)
