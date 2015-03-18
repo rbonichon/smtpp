@@ -12,7 +12,7 @@ module PredefinedOp = struct
       | _, _ -> false
 
     let equal_index i1 i2 =
-      match i1 i2 with
+      match i1, i2 with
       | IdxNum n1, IdxNum n2 -> (compare n1 n2 = 0)
       | IdxSymbol sy1, IdxSymbol sy2 -> (equal_symbs sy1 sy2)
       | _, _ -> false
@@ -30,21 +30,23 @@ module PredefinedOp = struct
       match id1.id_desc, id2.id_desc with
       | IdSymbol sy1, IdSymbol sy2 -> (equal_symbs sy1 sy2)
       | IdUnderscore(sy1, i1), IdUnderscore(sy2, i2) ->
-          (equal_symbs sy1 sy2) && (equal_indexes i1 i2)
+         (equal_symbs sy1 sy2) && (equal_indexes i1 i2)
       | _, _ -> false
 
-    let equal_sort ps1 ps2 =
+    let rec equal_sorts par_s1 par_s2 =
+      match par_s1, par_s2 with
+      | [], [] -> true
+      | Some x1 :: xs1, Some x2 :: xs2 -> 
+          (equal_sort x1 x2) && (equal_sorts xs1 xs2)
+      | _, _ -> false 
+
+    and equal_sort ps1 ps2 =
       match ps1.sort_desc, ps2.sort_desc with
       | SortIdentifier id1, SortIdentifier id2 -> (equal_ids id1 id2)
       | SortFun(id1, s1), SortFun(id2, s2) -> 
           (equal_ids id1 id2) && (equal_sorts s1 s2)
       | _, _ -> false
 
-    let rec equal_sorts par_s1 par_s2 =
-      match par_s1, par_s2 with
-      | [], [] -> true
-      | x1::xs1, x2 :: xs2 -> (equal_sort x1 x2) && (equal_sorts xs1 xs2)
-      | _, _ -> false 
 
     let equal_predefined_ops op1 op2 =
       match op1, op2 with
@@ -56,6 +58,13 @@ module PredefinedOp = struct
 ;;
 
 (* let eval *)
+
+let preprocess_command cmd =
+  match cmd with
+  | CmdSetLogic logic -> preprocess_logic logic
+;;
+
+let preprocess_commands cmds = List.map preprocess_command cmds ;;
 
 let get_hashtable = (fun () ->  h)
   
