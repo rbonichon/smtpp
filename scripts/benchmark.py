@@ -13,7 +13,7 @@ import matplotlib, numpy
 import matplotlib.pyplot as plt
 import pickle
 import sys
-
+import shutil
 
 parser = argparse.ArgumentParser(
         "Comparing SMT tools")
@@ -26,9 +26,9 @@ parser.add_argument("-f", "--file", dest = "configfile",
 parser.add_argument("-pd", "--pickle-dir", dest = "pickledir",
                     default=".",
                     help = " load pickles located at directory")
-parser.add_argument("-tout", "--timeout", dest = "timeout",
-                    default="None",
-                    help = " load pickles located at directory")
+parser.add_argument("-t", "--timeout", dest = "timeout",
+                    default=None,
+                    help = " timeout for tools")
 
 
 args = parser.parse_args()
@@ -42,7 +42,7 @@ else:
 # Reads configuration file
 config = configparser.ConfigParser(strict = True) # allow duplicate sections
 config.read(args.configfile)
-
+for c in config.items(): print(c)
 
 # A list of Bench objects to be handled for later analysis
 benchmarks = []
@@ -50,9 +50,21 @@ smt2file = re.compile("\S+.smt2")
 # The list of files to be benchmarked
 benchfiles = []
 
+class BenchError(Exception):
+    def __init__(self, value):
+        self.value = value
+        Exception.__init__(self)
+
+    def __str__(self):
+        return repr(self.value)
+
 class Bench(object):
     def __init__(self, tool):
         self.toolname = tool["name"]
+        binary = tool["bin"] if tool["bin"] else tool["cmd"]
+        if shutil.which(binary) is None:
+            logging.debug("{} not found in PATH".format(binary))
+            raise BenchError("{} not found".format(binary))
         self.toolcmd = tool["cmd"]
         self.total = 0
         self.results = dict()
@@ -120,7 +132,7 @@ class Bench(object):
         tok = 0
         for _, info in res:
             tok += info["time"]
-        avg = tok / okbench
+        avg = tok / okbench if okbench > 0 else -1
         tmax = max([ info["time"] for (_, info) in res ])
         tmin = min([ info["time"] for (_, info) in res ])
         f.write("Avg time: {0}\n".format(avg))
@@ -163,9 +175,8 @@ class Bench(object):
         logging.debug("Writing {}".format(fname))
         plt.savefig(fname)
 
-def mk_bench(tool, benchfiles):
+def mk_bench(toolbench, benchfiles):
     """ Launch the benchmark for a given tool with provided command """
-    b = Bench(tool)
     n = len(benchfiles)
     for i, bf in enumerate(benchfiles):
         logging.debug("{1} / {2} : {0} {3}".format(b.toolname, i, n, bf))
@@ -188,12 +199,30 @@ for dtitle, dname in config['bench_directories'].items():
 
 print("Added {} benchmarks".format(len(benchfiles)))
 
+
+def mk_toolbench(tool):
+    try:
+        b = Bench(tool)
+    except BenchError as e:
+        logging.info(e)
+        b = None
+    return b
+
+# Create bench objects for each tools if they exist
+tools = []
 for _, toolname in config['tools'].items():
     try:
+        print(toolname)
         tool = config[toolname]
-        mk_bench(tool, benchfiles)
+        b = mk_toolbench(tool)
+        if b is not None:
+            tools.insert(0, b)
     except KeyError:
         logging.info("Tool description for {} not found".format(toolname))
+
+# do the benchmark
+for t in tools:
+    mk_bench(b, benchfiles)
 
 plt.style.use('ggplot')
 
