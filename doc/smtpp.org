@@ -52,6 +52,18 @@ results. As such, ~veriT~ is able to handle the following example:
 
 #+end_src
 
+** Unused definitions
+
+** Theory oracle
+
+Some tools produce SMT-LIB scripts which do not sport any ~set-logic~
+command. Even though it is not SMT-LIB compliant to do so, some solvers such as
+CVC4 or Z3 handle these scripts without problems. Thus, the goal of this plug-in
+is to offer capabilities which allow to guess which theory are needed with
+respect to a given script.
+
+
+
 ** Monomorphizer
 
 ** Normalizer
@@ -59,3 +71,1179 @@ results. As such, ~veriT~ is able to handle the following example:
 Normalizing the formulas to be treated is a task that SMT-solver needs to
 
 * Preliminary benchmarks
+
+* Theories
+
+** Core
+#+begin_src lisp
+(theory Core
+
+ :smt-lib-version 2.0
+ :written_by "Cesare Tinelli"
+ :date "2010-04-17"
+ :last_modified "2010-08-15"
+
+ :sorts ((Bool 0))
+
+ :funs ((true Bool)
+        (false Bool)
+        (not Bool Bool)
+        (=> Bool Bool Bool :right-assoc)
+        (and Bool Bool Bool :left-assoc)
+        (or Bool Bool Bool :left-assoc)
+        (xor Bool Bool Bool :left-assoc)
+        (par (A) (= A A Bool :chainable))
+        (par (A) (distinct A A Bool :pairwise))
+        (par (A) (ite Bool A A A))
+       )
+
+ :definition
+ "For every expanded signature Sigma, the instance of Core with that signature
+  is the theory consisting of all Sigma-models in which:
+
+  - the sort Bool denotes the set {true, false} of Boolean values;
+
+  - for all sorts s in Sigma,
+    - (= s s Bool) denotes the function that
+      returns true iff its two arguments are identical;
+    - (distinct s s Bool) denotes the function that
+      returns true iff its two arguments are not identical;
+    - (ite Bool s s) denotes the function that
+      returns its second argument or its third depending on whether
+      its first argument is true or not;
+
+  - the other function symbols of Core denote the standard Boolean operators
+    as expected.
+ "
+ :values
+ "The set of values for the sort Bool is {true, false}."
+)
+
+#+end_src
+
+** Arrays
+#+begin_src lisp
+(theory ArraysEx
+
+ :smt-lib-version 2.0
+ :written_by "Cesare Tinelli"
+ :date "2010-04-28"
+ :last_modified "2010-08-15"
+
+ :sorts ((Array 2))
+
+ :funs ((par (X Y) (select (Array X Y) X Y))
+        (par (X Y) (store (Array X Y) X Y (Array X Y))) )
+
+ :notes "A schematic version of the theory of functional arrays with extensionality."
+
+ :definition
+ "For every expanded signature Sigma, the instance of ArraysEx with that signature
+  is the theory consisting of all Sigma-models that satisfy all axioms of the form
+  below, for all sorts s1, s2 in Sigma:
+
+  - (forall ((a (Array s1 s2)) (i s1) (e s2))
+      (= (select (store a i e) i) e))
+
+  - (forall ((a (Array s1 s2)) (i s1) (j s1) (e s2))
+      (=> (distinct i j)
+               (= (select (store a i e) j) (select a j))))
+
+  - (forall ((a (Array s1 s2)) (b (Array s1 s2)))
+      (=> (forall ((i s1)) (= (select a i) (select b i)))
+               (= a b)))
+ "
+
+ :values
+ "For all sorts s1, s2 in in the signature, the values of sort (Array s1 s2) are
+  abstract.
+ "
+)
+#+end_src
+
+** Ints
+#+begin_src lisp
+(theory Ints
+
+ :smt-lib-version 2.0
+ :written_by "Cesare Tinelli"
+ :date "2010-04-17"
+
+ :sorts ((Int 0))
+
+ :funs ((NUMERAL Int)
+        (- Int Int)                 ; negation
+        (- Int Int Int :left-assoc) ; subtraction
+        (+ Int Int Int :left-assoc)
+        (* Int Int Int :left-assoc)
+        (div Int Int Int :left-assoc)
+        (mod Int Int Int)
+        (abs Int Int)
+        (<= Int Int Bool :chainable)
+        (<  Int Int Bool :chainable)
+        (>= Int Int Bool :chainable)
+        (>  Int Int Bool :chainable)
+       )
+
+ :funs_description
+ "All ranked function symbols of the form
+    ((_ divisible n) Int Bool)
+  where n is a positive numeral.
+ "
+
+ :values
+ "The set of values for the sort Int consists of
+  - all numerals,
+  - all terms of the form (- n) where n is a numeral other than 0.
+ "
+
+ :definition
+ "For every expanded signature, the instance of Ints with that
+  signature is the theory consisting of all Sigma-models that interpret:
+
+  - the sort Int as the set of all integer numbers,
+
+  - each numeral as the corresponding natural number,
+
+  - (_ divisible n) as the function mapping to true all and only
+    the integers that are divisible by n,
+
+  - abs as the absolute value function,
+
+  - div and mod according to Boute's Euclidean definition [1], that is,
+    so as to satify the formula
+
+    (for all ((m Int) (n Int))
+      (=> (distinct n 0)
+          (let ((q (div m n)) (r (mod m n)))
+            (and (= m (+ (* n q) r))
+                 (<= 0 r (- (abs n) 1))))))
+
+  - the other function symbols of Ints as expected.
+
+  References:
+  [1] Boute, Raymond T. (April 1992).
+      The Euclidean definition of the functions div and mod.
+      ACM Transactions on Programming Languages and Systems (TOPLAS)
+      ACM Press. 14 (2): 127 - 144. doi:10.1145/128861.128862.
+ "
+
+ :notes
+ "Regardless of sign of m,
+  when n is positive, (div m n) is the floor of the rational number m/n;
+  when n is negative, (div m n) is the ceiling of m/n.
+
+  This contrasts with alternative but less robust definitions of / and mod
+  where (div m n) is
+  - always the integer part of m/n (rounding towards 0), or
+  - always the floor of x/y (rounding towards -infinity).
+ "
+
+ :notes
+ "See note in the Reals theory declaration about terms of the form (/ t 0).
+  The same observation applies here to terms of the form (div t 0) and
+  (mod t 0).
+ "
+)
+#+end_src
+
+** Reals
+
+#+begin_src lisp
+(theory Reals
+
+ :smt-lib-version 2.0
+ :written_by "Cesare Tinelli"
+ :date "2010-04-17"
+ :last_updated "2012-06-20"
+
+ :history
+ "2012-06-20:
+  Modified the definition of :value attribute to include abstract values
+  for irrational algebraic numbers.
+ "
+ :sorts ((Real 0))
+
+ :funs ((NUMERAL Real)
+        (DECIMAL Real)
+        (- Real Real)                  ; negation
+        (- Real Real Real :left-assoc) ; subtraction
+        (+ Real Real Real :left-assoc)
+        (* Real Real Real :left-assoc)
+        (/ Real Real Real :left-assoc)
+        (<= Real Real Bool :chainable)
+        (<  Real Real Bool :chainable)
+        (>= Real Real Bool :chainable)
+        (>  Real Real Bool :chainable)
+       )
+
+ :values
+ "The set of values for the sort Real consists of
+  - an abstract value for each irrational algebraic number
+  - all numerals
+  - all terms of the form (- n) where n is a numeral other than 0
+  - all terms of the form (/ m n) or (/ (- m) n) where
+    - m is a numeral other than 0,
+    - n is a numeral other than 0 and 1,
+    - as integers, m and n have no common factors besides 1.
+ "
+ :definition
+ "For every expanded signature Sigma, the instance of Reals with that
+  signature is the theory consisting of all Sigma-models that interpret
+
+  - the sort Real as the set of all real numbers,
+
+  - each numeral as the corresponding real number,
+
+  - each decimal as the corresponding real number,
+
+  - / as a total function that coincides with the real division function
+    for all inputs x and y where y is non-zero,
+
+  - the other function symbols of Reals as expected.
+ "
+
+ :notes
+ "Since in SMT-LIB logic all function symbols are interpreted as total
+  functions, terms of the form (/ t 0) *are* meaningful in every
+  instance of Reals. However, the declaration imposes no constraints
+  on their value. This means in particular that
+  - for every instance theory T and
+  - for every closed terms t1 and t2 of sort Real,
+  there is a model of T that satisfies (= t1 (/ t2 0)).
+ "
+
+ :notes
+ "The restriction of Reals over the signature having just the symbols
+  (0 Real)
+  (1 Real)
+  (- Real Real)
+  (+ Real Real Real)
+  (* Real Real Real)
+  (<= Real Real Bool)
+  (<  Real Real Bool)
+  coincides with the theory of real closed fields, axiomatized by
+  the formulas below:
+
+   - associativity of +
+   (forall ((x Real) (y Real) (z Real))
+    (= (+ (+ x y) z) (+ x (+ y z))))
+
+   - commutativity of +
+   (forall ((x Real) (y Real))
+    (= (* x y) (* y x)))
+
+   - 0 is the right (and by commutativity, left) unit of +
+   (forall ((x Real)) (= (+ x 0) x))
+
+   - right (and left) inverse wrt +
+   (forall ((x Real)) (= (+ x (- x)) 0))
+
+   - associativity of *
+   (forall ((x Real) (y Real) (z Real))
+    (= (* (* x y) z) (* x (* y z))))
+
+   - commutativity of *
+   (forall ((x Real) (y Real)) (= (* x y) (* y x)))
+
+   - 1 is the right (and by commutativity, left) unit of *
+   (forall ((x Real)) (= (* x 1) x))
+
+   - existence of right (and left) inverse wrt *
+   (forall ((x Real))
+    (or (= x 0) (exists (y Real) (= (* x y) 1))))
+
+   - left distributivity of * over +
+   (forall ((x Real) (y Real) (z Real))
+    (= (* x (+ y z)) (+ (* x y) (* x z))))
+
+   - right distributivity of * over +
+   (forall ((x Real) (y Real) (z Real))
+    (= (* (+ x y) z) (+ (* x z) (* y z))))
+
+         - non-triviality
+   (distinct 0 1)
+
+         - all positive elements have a square root
+   (forall (x Real)
+    (exists (y Real) (or (= x (* y y)) (= (- x) (* y y)))))
+
+         - axiom schemas for all n > 0
+    (forall (x_1 Real) ... (x_n Real)
+      (distinct (+ (* x_1 x_1) (+ ... (* x_n x_n)))
+         (- 1)))
+
+         - axiom schemas for all odd n > 0 where
+    (^ y n) abbreviates the n-fold product of y with itself
+     (forall (x_1 Real) ... (x_n Real)
+      (exists (y Real)
+      (= 0
+         (+ (^ y n) (+ (* x_1 (^ y n-1)) (+  ... (+ (* x_{n-1} y) x_n)))))))
+
+         - reflexivity of <=
+         (forall (x Real) (<= x x))
+
+         - antisymmetry of <=
+         (forall (x Real) (y Real)
+   (implies (and (<= x y) (<= y x))
+            (= x y)))
+
+         - transitivity of <=
+         (forall (x Real) (y Real) (z Real)
+   (implies (and (<= x y) (<= y z))
+            (<= x z)))
+
+         - totality of <=
+         (forall (x Real) (y Real)
+   (or (<= x y) (<= y x)))
+
+         - monotonicity of <= wrt +
+         (forall (x Real) (y Real) (z Real)
+   (implies (<= x y) (<= (+ x z) (+ y z))))
+
+         - monotonicity of <= wrt *
+         (forall (x Real) (y Real) (z Real)
+   (implies (and (<= x y) (<= 0 z))
+            (<= (* z x) (* z y))))
+
+         - definition of <
+         (forall (x Real) (y Real)
+   (iff (< x y)
+        (and (<= x y) (distinct x y)))
+         )
+
+  References:
+  1) W. Hodges. Model theory. Cambridge University Press, 1993.
+  2) PlanetMath, http://planetmath.org/encyclopedia/RealClosedFields.html
+ "
+)
+#+end_src
+
+** Reals/Ints
+#+begin_src lisp
+ :written_by "Cesare Tinelli"
+ :date "2010-04-17"
+
+ :sorts ((Int 0) (Real 0))
+
+ :funs ((NUMERAL Int)
+        (- Int Int)                 ; negation
+        (- Int Int Int :left-assoc) ; subtraction
+        (+ Int Int Int :left-assoc)
+        (* Int Int Int :left-assoc)
+        (div Int Int Int :left-assoc)
+        (mod Int Int Int)
+        (abs Int Int)
+        (<= Int Int Bool :chainable)
+        (<  Int Int Bool :chainable)
+        (>= Int Int Bool :chainable)
+        (>  Int Int Bool :chainable)
+        (DECIMAL Real)
+        (- Real Real)                  ; negation
+        (- Real Real Real :left-assoc) ; subtraction
+        (+ Real Real Real :left-assoc)
+        (* Real Real Real :left-assoc)
+        (/ Real Real Real :left-assoc)
+        (<= Real Real Bool :chainable)
+        (<  Real Real Bool :chainable)
+        (>= Real Real Bool :chainable)
+        (>  Real Real Bool :chainable)
+        (to_real Int Real)
+        (to_int Real Int)
+        (is_int Real Bool)
+       )
+
+ :funs_description
+ "All ranked function symbols of the form
+    ((_ divisible n) Int Bool)
+  where n is a positive numeral.
+ "
+
+ :values
+ "The set of values for the sort Int consists of
+  - all numerals,
+  - all terms of the form (- n) where n is a numeral other than 0.
+
+  The set of values for the sort Real consists of
+  - all terms of the form (/ (to_real m) (to_real n)) or
+    (/ (- (to_real m)) (to_real n)) where
+    - m is a numeral,
+    - n is a numeral other than 0,
+    - as integers, m and n have no common factors besides 1.
+ "
+
+ :definition
+ "For every expanded signature Sigma, the instance of RealsInts with that
+  signature is the theory consisting of all Sigma-models that interpret:
+
+  - the sort Int as the set of all integer numbers,
+
+  - the sort Real as the set of all real numbers,
+
+  - each numeral as the corresponding natural number,
+
+  - to_real as the standard injection of the integers into the reals,
+
+  - the other function symbols with Int arguments as in the theory
+    declaration Ints,
+
+  - each decimal as the corresponding real number,
+
+  - to_int as the function that maps each real number r to its integer part,
+    that is, to the largest integer n that satisfies (<= (to_real n) r)
+
+  - is_int as the function that maps to true all and only the reals in the
+    image of to_real,
+
+  - the other function symbols with Real arguments as in the theory
+    declaration Reals.
+ "
+
+ :notes
+  "By definition of to_int, (to_int (- 1.3)) is equivalent to (- 2), not
+   (- 1).
+  "
+
+ :notes
+ "For each instance T of Reals_Ints, all models of T satisfy the sentence:
+
+  (forall ((x Real))
+    (= (is_int x) (= x (to_real (to_int x)))))
+ "
+)
+#+end_src
+** Floating Points
+#+begin_src lisp
+(theory FloatingPoint
+
+ :smt-lib-version 2.0
+ :written_by "Cesare Tinelli and Martin Brain"
+ :date "2014-05-27"
+
+ :notes
+ "This is a theory of floating point numbers largely based on the IEEE standard
+  754-2008 for floating-point arithmetic (http://grouper.ieee.org/groups/754/)
+  but restricted to the binary case only.
+  A major extension over 754-2008 is that the theory has a sort for every
+  possible exponent and significand length.
+
+  Version 1 of the theory was based on proposal by P. Ruemmer and T. Wahl [RW10].
+
+  [RW10] Philipp Ruemmer and Thomas Wahl.
+         An SMT-LIB Theory of Binary Floating-Point Arithmetic.
+         Proceedings of the 8th International Workshop on
+         Satisfiability Modulo Theories (SMT'10), Edinburgh, UK, July 2010.
+         (http://www.philipp.ruemmer.org/publications/smt-fpa.pdf)
+
+  Version 2 was written by C. Tinelli using community feedback.
+  Version 3, the current one, was written by C. Tinelli and M. Brain following
+  further discussion within the SMT-LIB community.
+  A more detailed description of this version together with the rationale of
+  several models decisions as well as a formal semantics of the theory can be
+  found in
+
+  [BTRW14] Martin Brain, Cesare Tinelli, Philipp Ruemmer, and Thomas Wahl.
+           An Automatable Formal Semantics for IEEE-754 Floating-Point Arithmetic
+           Technical Report, 2014.
+           (http://smt-lib.org/papers/BTRW14.pdf)
+
+  The following additional people provided substantial feedback and directions:
+  Fran\c{c}ois Bobot, David Cok, Alberto Griggio, Florian Lapschies, Leonardo de
+  Moura, Gabriele Paganelli, Cody Roux, Christoph Wintersteiger.
+ "
+
+;-------
+; Sorts
+;-------
+
+ :sorts ((RoundingMode 0) (Real 0))
+
+ ; Bit vector sorts, indexed by vector size
+ :sorts_description "All sort symbols of the form
+    (_ BitVec m)
+  where m is a numeral greater than 0."
+
+ ; Floating point sort, indexed by the length of the exponent and significand
+ ; components of the number
+ :sorts_description "All nullary sort symbols of the form
+
+    (_ FloatingPoint eb sb),
+
+  where eb and sb are numerals greater than 1."
+
+ :note
+ "eb defines the number of bits in the exponent;
+  sb defines the number of bits in the significand, *including* the hidden bit.
+ "
+
+; Short name for common floating point sorts
+:sort ((Float16 0) (Float32 0) (Float64 0) (Float128 0))
+
+ :note "
+  -  Float16 is a synonym for (_ FloatingPoint  5  11)
+  -  Float32 is a synonym for (_ FloatingPoint  8  24)
+  -  Float64 is a synonym for (_ FloatingPoint 11  53)
+  - Float128 is a synonym for (_ FloatingPoint 15 113)
+
+  These correspond to the IEEE binary16, binary32, binary64 and binary128 formats.
+ "
+
+;----------------
+; Rounding modes
+;----------------
+
+ ; Constants for rounding modes, and their abbreviated version
+ :funs ((roundNearestTiesToEven RoundingMode) (RNE RoundingMode)
+        (roundNearestTiesToAway RoundingMode) (RNA RoundingMode)
+        (roundTowardPositive RoundingMode)    (RTP RoundingMode)
+        (roundTowardNegative RoundingMode)    (RTN RoundingMode)
+        (roundTowardZero RoundingMode)        (RTZ RoundingMode)
+        )
+
+
+;--------------------
+; Value constructors
+;--------------------
+
+ ; Bitvector literals
+ :funs_description "
+    All binaries #bX of sort (_ BitVec m) where m is the number of digits in X.
+    All hexadecimals #xX of sort (_ BitVec m) where m is 4 times the number of
+    digits in X.
+ "
+
+ ; FP literals as bit string triples, with the leading bit for the significand
+ ; not represented (hidden bit)
+ :funs_description "All function symbols with declaration of the form
+
+   (fp (_ BitVec 1) (_ BitVec eb) (_ BitVec i) (_ FloatingPoint eb sb))
+
+   where eb and sb are numerals greater than 1 and i = sb - 1."
+
+ ; Plus and minus infinity
+ :funs_description "All function symbols with declaration of the form
+
+   ((_ +oo eb sb) (_ FloatingPoint eb sb))
+   ((_ -oo eb sb) (_ FloatingPoint eb sb))
+
+  where eb and sb are numerals greater than 1."
+
+ :note
+ "Semantically, for each eb and sb, there is exactly one +infinity value and
+  exactly one -infinity value in the set denoted by (_ FloatingPoint eb sb),
+  in agreement with the IEEE 754-2008 standard.
+  However, +/-infinity can have two representations in this theory.
+  E.g., +infinity for sort (_ FloatingPoint 2 3) is represented equivalently
+  by (_ +oo 2 3) and (fp #b0 #b11 #b00).
+ "
+
+ ; Plus and minus zero
+ :funs_description "All function symbols with declaration of the form
+
+   ((_ +zero eb sb) (_ FloatingPoint eb sb))
+   ((_ -zero eb sb) (_ FloatingPoint eb sb))
+
+  where eb and sb are numerals greater than 1."
+
+ :note
+ "The +zero and -zero symbols are abbreviations for the corresponding fp literals.
+  E.g.,   (_ +zero 2 4) abbreviates (fp #b0 #b00 #b000)
+          (_ -zero 3 2) abbreviates (fp #b1 #b000 #b0)
+ "
+
+ ; Non-numbers
+ :funs_description "All function symbols with declaration of the form
+
+   ((_ NaN eb sb) (_ FloatingPoint eb sb))
+
+  where eb and sb are numerals greater than 1."
+
+ :note
+ "For each eb and sb, there is exactly one NaN in the set denoted by
+  (_ FloatingPoint eb sb), in agreeement with Level 2 of IEEE 754-2008
+  (floating-point data). There is no distinction in this theory between
+  a ``quiet'' and a ``signaling'' NaN.
+  NaN has several representations, e.g.,(_ NaN eb sb) and any term of
+  the form (fp #b0 #b1..1 s) where s is a binary containing at least a 1.
+ "
+
+;-----------
+; Operators
+;-----------
+
+ :funs_description "All function symbols with declarations of the form below
+   where eb and sb are numerals greater than 1.
+
+   ; absolute value
+   (fp.abs (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+
+   ; negation (no rounding needed)
+   (fp.neg (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+
+   ; addition
+   (fp.add RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb)
+     (_ FloatingPoint eb sb))
+
+   ; subtraction
+   (fp.sub RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb)
+     (_ FloatingPoint eb sb))
+
+   ; multiplication
+   (fp.mul RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb)
+     (_ FloatingPoint eb sb))
+
+   ; division
+   (fp.div RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb)
+     (_ FloatingPoint eb sb))
+
+   ; fused multiplication and addition; (x * y) + z
+   (fp.fma RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) (_ FloatingPoint eb sb)
+     (_ FloatingPoint eb sb))
+
+   ; square root
+   (fp.sqrt RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+
+   ; remainder: x - y * n, where n in Z is nearest to x/y
+   (fp.rem (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+
+   ; rounding to integral
+   (fp.roundToIntegral RoundingMode (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+
+   ; minimum and maximum
+   (fp.min (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+   (fp.max (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) (_ FloatingPoint eb sb))
+
+   ; comparison operators
+   ; Note that all comparisons evaluate to false if either argument is NaN
+   (fp.leq (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) Bool :chainable)
+   (fp.lt  (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) Bool :chainable)
+   (fp.geq (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) Bool :chainable)
+   (fp.gt  (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) Bool :chainable)
+
+   ; IEEE 754-2008 equality (as opposed to SMT-LIB =)
+   (fp.eq (_ FloatingPoint eb sb) (_ FloatingPoint eb sb) Bool :chainable)
+
+   ; Classification of numbers
+   (fp.isNormal (_ FloatingPoint eb sb) Bool)
+   (fp.isSubnormal (_ FloatingPoint eb sb) Bool)
+   (fp.isZero (_ FloatingPoint eb sb) Bool)
+   (fp.isInfinite (_ FloatingPoint eb sb) Bool)
+   (fp.isNaN (_ FloatingPoint eb sb) Bool)
+   (fp.isNegative (_ FloatingPoint eb sb) Bool)
+   (fp.isPositive (_ FloatingPoint eb sb) Bool)
+ "
+
+ :note
+ "(fq.eq x y) evaluates to true if x evaluates to -zero and y to +zero, or vice versa.
+  fq.eq and all the other comparison operators evaluate to false if one of their
+  arguments is NaN.
+ "
+
+
+;------------------------------
+; Conversions from other sorts
+;------------------------------
+
+ :funs_description "All function symbols with declarations of the form below
+   where m is a numerals greater than 0 and eb, sb, mb and nb are numerals
+   greater than 1.
+
+   ; from single bitstring representation in IEEE 754-2008 interchange format,
+   ; with m = eb + sb
+   ((_ to_fp eb sb) (_ BitVec m) (_ FloatingPoint eb sb))
+
+   ; from another floating point sort
+   ((_ to_fp eb sb) RoundingMode (_ FloatingPoint mb nb) (_ FloatingPoint eb sb))
+
+   ; from real
+   ((_ to_fp eb sb) RoundingMode Real (_ FloatingPoint eb sb))
+
+   ; from signed machine integer, represented as a 2's complement bit vector
+   ((_ to_fp eb sb) RoundingMode (_ BitVec m) (_ FloatingPoint eb sb))
+
+   ; from unsigned machine integer, represented as bit vector
+   ((_ to_fp_unsigned eb sb) RoundingMode (_ BitVec m) (_ FloatingPoint eb sb))
+ "
+
+
+;----------------------------
+; Conversions to other sorts
+;----------------------------
+
+ :funs_description "All function symbols with declarations of the form below
+   where m is a numeral greater than 0 and  eb and sb are numerals greater than 1.
+
+   ; to unsigned machine integer, represented as a bit vector
+   ((_ fp.to_ubv m) RoundingMode (_ FloatingPoint eb sb) (_ BitVec m))
+
+   ; to signed machine integer, represented as a 2's complement bit vector
+   ((_ fp.to_sbv m) RoundingMode (_ FloatingPoint eb sb) (_ BitVec m))
+
+   ; to real
+   (fp.to_real (_ FloatingPoint eb sb) Real)
+ "
+ :note
+ "All fp.to_* functions are unspecified for NaN and infinity input values.
+  In addition, fp.to_ubv and fp.to_sbv are unspecified for finite number inputs
+  that are out of range (which includes all negative numbers for fp.to_ubv).
+
+  This means for instance that the formula
+
+    (= (fp.to_real (_ NaN 8 24)) (fp.to_real (fp c1 c2 c3)))
+
+  is satisfiable in this theory for all binary constants c1, c2, and c3
+  (of the proper sort).
+ "
+
+ :note
+ "There is no function for converting from (_ FloatingPoint eb sb) to the
+  corresponding IEEE 754-2008 binary format, as a bit vector (_ BitVec m) with
+  m = eb + sb, because (_ NaN eb sb) has multiple, well-defined representations.
+  Instead, an encoding of the kind below is recommended, where f is a term
+  of sort (_ FloatingPoint eb sb):
+
+   (declare-fun b () (_ BitVec m))
+   (assert (= ((_ to_fp eb sb) b) f))
+ "
+
+;--------
+; Values
+;--------
+
+ :values "For all m,n > 1, the values of sort (_ FloatingPoint m n) are
+  - (_ +oo m n)
+  - (_ -oo m n)
+  - (_ NaN m n)
+  - all terms of the form (fp c1 c2 c3) where
+    - c1 is the binary #b0 or #b1
+    - c2 is a binary of size m other than #b1...1 (all 1s)
+    - c3 is a binary of size n-1
+
+  The set of values for RoundingMode is {RNE, RNA, RTP, RTN, RTZ}.
+ "
+
+ :note
+ "No values are specified for the sorts Real and (_ BitVec n) in this theory.
+  They are specified in the theory declarations Reals and FixedSizeBitVectors,
+  respectively.
+ "
+
+;-----------
+; Semantics
+;-----------
+
+ :note
+ "The semantics of this theory is described somewhat informally here.
+  A rigorous, self-contained specification can be found in [BTRW14]:
+   'An Automatable Formal Semantics for IEEE-754 Floating-Point Arithmetic'
+  and it takes precedence in the case of any (unintended) inconsistencies.
+ "
+
+ :definition
+ "For every expanded signature Sigma, the instance of FloatingPoints with
+  that signature is the theory consisting of all Sigma-models that satisfy
+  the constraints detailed below.
+
+  We use [[ _ ]] to denote the meaning of a sort or function symbol in
+  a given Sigma-model.
+
+
+  o (_ FloatingPoint eb sb)
+
+    [[(_ FloatingPoint eb sb)]] is the set of all the binary floating point
+    numbers with eb bits for the exponent and sb bits for the significand,
+    as defined by IEEE 754-2008.
+
+    Technically, [[(_ FloatingPoint eb sb)]] is the union of the set
+    {not_a_number} with four sets N, S, Z, I of bit-vector triples
+    (corresponding to normal numbers, subnormal numbers, zeros and
+    infinities) of the form (s, e, m) where s, e, and m correspond
+    respectively to the sign, the exponent and the significand (see
+    the paper for more details).
+
+    Note that the (semantic) value not_a_number is shared across all
+    [[(_ FloatingPoint eb sb)]].
+
+
+  o (_ BitVec m), binary and hexadecimal constants
+
+    These are interpreted as in the theory FixedSizeBitVectors.
+
+
+  o Real
+
+    [[Real]] is the set of real numbers.
+
+
+  o RoundingMode
+
+    [[RoundingMode]] is the set of the 5 rounding modes defined by IEEE 754-2008.
+
+
+  o (roundNearestTiesToEven RoundingMode), (roundNearestTiesToAway RoundingMode), ...
+
+    [[roundNearestTiesToEven]], [[roundNearestTiesToAway]], [[roundTowardPositive]],
+    [[roundTowardNegative]], and [[roundTowardZero]] are the 5 distinct elements
+    of [[RoundingMode]], and each corresponds to the rounding mode suggested by
+    the symbol's name.
+
+
+  o (RNE RoundingMode), (RNA RoundingMode), ...
+
+    [[RNE]] = [[roundNearestTiesToEven]];
+    [[RNA]] = [[roundNearestTiesToAway]];
+    [[RTP]] = [[roundTowardPositive]];
+    [[RTN]] = [[roundTowardNegative]];
+    [[RTZ]] = [[roundTowardZero]].
+
+
+  o (fp (_ BitVec 1) (_ BitVec eb) (_ BitVec i) (_ FloatingPoint eb sb))
+
+    [[fp]] returns the element of [[(_ FloatingPoint eb sb)]] whose IEEE 754-2008
+    binary encoding matches the input bit strings:
+    for all bitvectors
+    b1 in [[(_ BitVec 1)]], b2 in [[(_ BitVec eb)]] and b3 in [[(_ BitVec i)]],
+    [[fp]](b1, b2 ,b3) is the binary floating point number encoded in the IEEE
+    754-2008 standard with sign bit b1, exponent bits b2, and significant bit b3
+    (with 1 hidden bit).
+
+    Note that not_a_number can be denoted with fp terms as well. For instance, in
+    (_ FloatingPoint 2 2),
+    [[(_ NaN 2 2)]] = [[fp]]([[#b0]], [[#b11]], [[#b1]])
+                    = [[fp]]([[#b1]], [[#b11]], [[#b1]])
+
+    Similarly,
+    [[(_ +oo 2 2)]] = [[fp]]([[#b0]], [[#b11]], [[#b0]])
+    [[(_ -oo 2 2)]] = [[fp]]([[#b1]], [[#b11]], [[#b0]])
+
+
+  o ((_ +oo eb sb) (_ FloatingPoint eb sb))
+    ((_ -oo eb sb) (_ FloatingPoint eb sb))
+    ((_ NaN eb sb) (_ FloatingPoint eb sb))
+    ((_ +zero eb sb) (_ FloatingPoint eb sb))
+    ((_ -zero eb sb) (_ FloatingPoint eb sb))
+
+    [[(_ +oo eb sb)]] is +infinity
+    [[(_ -oo eb sb)]] is -infinity
+    [[(_ NaN eb sb)]] is not_a_number
+    [[(_ +zero eb sb)]] is [[fp]]([[#b0]], [[#b0..0]], [[#b0..0]]) where
+                           the first bitvector literal has eb 0s and
+                           the second has sb - 1 0s
+    [[(_ -zero eb sb)]] is [[fp]]([[#b1]], [[#b0..0]], [[#b0..0]]) where
+                           the first bitvector literal has eb 0s and
+                           the second has sb - 1 0s
+
+
+  o ((_ to_fp eb sb) (_ BitVec m) (_ FloatingPoint eb sb))
+
+    [[(_ to_fp eb sb)]](b) = [[fp]](b[m-1:m-1], b[eb+sb-1:sb], b[sb-1:0])
+    where b[p:q] denotes the subvector of bitvector b between positions p and q.
+
+
+  o (fp.to_real (_ FloatingPoint eb sb) Real)
+
+    [[fp.to_real]](x) is the real number represented by x if x is not in
+    {-infinity, -infinity, not_a_number}. Otherwise, it is unspecified.
+
+
+  o ((_ to_fp eb sb) RoundingMode (_ FloatingPoint m n) (_ FloatingPoint eb sb))
+
+    [[(_ to_fp eb sb)]](r, x) = x if x in {+infinity, -infinity, not_a_number}.
+    [[(_ to_fp eb sb)]](r, x) = +/-infinity if [[fp.to_real]](x) is too large/too
+    small to be represented as a finite number of [[(_ FloatingPoint eb sb)]];
+    [[(_ to_fp eb sb)]](r, x) = y otherwise, where y is the finite number
+    such that [[fp.to_real]](y) is closest to [[fp.to_real]](x) according to
+    rounding mode r.
+
+
+  o ((_ to_fp eb sb) RoundingMode Real (_ FloatingPoint eb sb))
+
+    [[(_ to_fp eb sb)]](r, x) = +/-infinity if x is too large/too small
+    to be represented as a finite number of [[(_ FloatingPoint eb sb)]];
+    [[(_ to_fp eb sb)]](r, x) = y otherwise, where y is the finite number
+    such that [[fp.to_real]](y) is closest to x according to rounding mode r.
+
+
+  o ((_ to_fp eb sb) RoundingMode (_ BitVec m) (_ FloatingPoint eb sb))
+
+    Let b in [[(_ BitVec m)]] and let n be the signed integer represented by b
+    (in 2's complement format).
+    [[(_ to_fp eb sb)]](r, b) = +/-infinity if n is too large/too small to be
+    represented as a finite number of [[(_ FloatingPoint eb sb)]];
+    [[(_ to_fp eb sb)]](r, x) = y otherwise, where y is the finite number
+    such that [[fp.to_real]](y) is closest to n according to rounding mode r.
+
+
+  o ((_ to_fp_unsigned eb sb) RoundingMode (_ BitVec m) (_ FloatingPoint eb sb))
+
+    Let b in [[(_ BitVec m)]] and let n be the unsigned integer represented by b.
+    [[(_ to_fp_unsigned eb sb)]](r, x) = +infinity if n is too large to be
+    represented as a finite number of [[(_ FloatingPoint eb sb)]];
+    [[(_ to_fp_unsigned eb sb)]](r, x) = y otherwise, where y is the finite number
+    such that [[fp.to_real]](y) is closest to n according to rounding mode r.
+
+
+  o ((_ fp.to_ubv m) RoundingMode (_ FloatingPoint eb sb) (_ BitVec m))
+
+    [[(_ fp.to_ubv m)]](r, x) = b if the unsigned integer n represented by b is
+    the closest integer according to rounding mode r to the real number
+    represented by x, and n is in the range [0, 2^m - 1].
+    [[(_ fp.to_ubv m)]](r, x) is unspecified in all other cases (including when
+    x is in {-infinity, -infinity, not_a_number}).
+
+
+  o ((_ fp.to_sbv m) RoundingMode (_ FloatingPoint eb sb) (_ BitVec m))
+
+    [[(_ fp.to_sbv m)]](r, x) = b if the signed integer n represented by b
+    (in 2's complement format) is the closest integer according to rounding mode
+    r to the real number represented by x, and n is in the range
+    [-2^{m-1}, 2^{m-1} - 1].
+    [[(_ fp.to_sbv m)]](r, x) is unspecified in all other cases (including when
+    x is in {-infinity, -infinity, not_a_number}).
+
+
+  o (fp.isNormal (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isNormal]](x) = true iff x is a normal number.
+
+
+  o (fp.isSubnormal (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isSubnormal]](x) = true iff x is a subnormal number.
+
+
+  o (fp.isZero (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isZero]](x) = true iff x is positive or negative zero.
+
+
+  o (fp.isInfinite (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isInfinite]](x) = true iff x is +infinity or -infinity.
+
+
+  o (fp.isNaN (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isNaN]](x) = true iff x = not_a_number.
+
+
+  o (fp.isNegative (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isNegative]](x) = true iff x is [[-zero]] or [[fp.lt]](x, [[-zero]]) holds.
+
+  o (fp.isPositive (_ FloatingPoint eb sb) Bool)
+
+    [[fp.isPositive]](x) = true iff x is [[+zero]] or [[fp.lt]]([[+zero]], x) holds.
+
+
+  o all the other function symbols are interpreted as described in [BTRW14].
+ "
+)
+#+end_src
+** BitVectors
+#+begin_src lisp
+ :written_by "Silvio Ranise, Cesare Tinelli, and Clark Barrett"
+ :date "2010-05-02"
+ :last_updated "2013-06-24"
+
+ :history
+ "2013-06-24:
+  Renamed theory's name from Fixed_Size_Bit_Vectors to FixedSizeBitVectors,
+  for consistency.
+  Added :value attribute.
+ "
+
+ :notes
+  "This theory declaration defines a core theory for fixed-size bitvectors
+   where the operations of concatenation and extraction of bitvectors as well
+   as the usual logical and arithmetic operations are overloaded.
+  "
+
+ :sorts_description "
+    All sort symbols of the form (_ BitVec m)
+    where m is a numeral greater than 0.
+ "
+
+ ; Bitvector literals
+ :funs_description "
+    All binaries #bX of sort (_ BitVec m) where m is the number of digits in X.
+    All hexadeximals #xX of sort (_ BitVec m) where m is 4 times the number of
+   digits in X.
+ "
+
+ :funs_description "
+    All function symbols with declaration of the form
+
+      (concat (_ BitVec i) (_ BitVec j) (_ BitVec m))
+
+    where
+    - i,j,m are numerals
+    - i,j > 0
+    - i + j = m
+ "
+
+ :funs_description "
+    All function symbols with declaration of the form
+
+      ((_ extract i j) (_ BitVec m) (_ BitVec n))
+
+    where
+    - i,j,m,n are numerals
+    - m > i >= j >= 0,
+    - n = i-j+1
+ "
+
+ :funs_description "
+    All function symbols with declaration of the form
+
+       (op1 (_ BitVec m) (_ BitVec m))
+    or
+       (op2 (_ BitVec m) (_ BitVec m) (_ BitVec m))
+
+    where
+    - op1 is from {bvnot, bvneg}
+    - op2 is from {bvand, bvor, bvadd, bvmul, bvudiv, bvurem, bvshl, bvlshr}
+    - m is a numeral greater than 0
+ "
+
+ :funs_description "
+    All function symbols with declaration of the form
+
+       (bvult (_ BitVec m) (_ BitVec m) Bool)
+
+    where
+    - m is a numeral greater than 0
+ "
+
+ :definition
+  "For every expanded signature Sigma, the instance of Fixed_Size_BitVectors
+   with that signature is the theory consisting of all Sigma-models that
+   satisfy the constraints detailed below.
+
+   The sort (_ BitVec m), for m > 0, is the set of finite functions
+   whose domain is the initial segment of the naturals [0...m), meaning
+   that 0 is included and m is excluded, and the co-domain is {0,1}.
+
+   To define some of the semantics below, we need the following additional
+   functions :
+
+   o _ div _,  which takes an integer x >= 0 and an integer y > 0 and returns
+     the integer part of x divided by y (i.e., truncated integer division).
+
+   o _ rem _, which takes an integer x >= 0 and y > 0 and returns the
+     remainder when x is divided by y.  Note that we always have the following
+     equivalence (for y > 0): (x div y) * y + (x rem y) = x.
+
+   o bv2nat, which takes a bitvector b: [0...m) --> {0,1}
+     with 0 < m, and returns an integer in the range [0...2^m),
+     and is defined as follows:
+
+       bv2nat(b) := b(m-1)*2^{m-1} + b(m-2)*2^{m-2} + ... + b(0)*2^0
+
+   o nat2bv[m], with 0 < m, which takes a non-negative integer
+     n and returns the (unique) bitvector b: [0,...,m) -> {0,1}
+     such that
+
+       b(m-1)*2^{m-1} + ... + b(0)*2^0 = n rem 2^m
+
+   The semantic interpretation [[_]] of well-sorted BitVec-terms is
+   inductively defined as follows.
+
+   - Variables
+
+   If v is a variable of sort (_ BitVec m) with 0 < m, then
+   [[v]] is some element of [{0,...,m-1} -> {0,1}], the set of total
+   functions from {0,...,m-1} to {0,1}.
+
+   - Constant symbols
+
+   The constant symbols #b0 and #b1 of sort (_ BitVec 1) are defined as follows
+
+   [[#b0]] := \lambda x : [0,1). 0
+   [[#b1]] := \lambda x : [0,1). 1
+
+   More generally, given a string #b followed by a sequence of 0's and 1's,
+   if n is the numeral represented in base 2 by the sequence of 0's and 1's
+   and m is the length of the sequence, then the term represents
+   nat2bv[m](n).
+
+   The string #x followed by a sequence of digits and/or letters from A to
+   F is interpreted similarly: if n is the numeral represented in hexadecimal
+   (base 16) by the sequence of digits and letters from A to F and m is four
+   times the length of the sequence, then the term represents nat2bv[m](n).
+   For example, #xFF is equivalent to #b11111111.
+
+   - Function symbols for concatenation
+
+   [[(concat s t)]] := \lambda x : [0...n+m).
+                          if (x<m) then [[t]](x) else [[s]](x-m)
+   where
+   s and t are terms of sort (_ BitVec n) and (_ BitVec m), respectively,
+   0 < n, 0 < m.
+
+   - Function symbols for extraction
+
+   [[((_ extract i j) s))]] := \lambda x : [0...i-j+1). [[s]](j+x)
+   where s is of sort (_ BitVec l), 0 <= j <= i < l.
+
+   - Bit-wise operations
+
+   [[(bvnot s)]] := \lambda x : [0...m). if [[s]](x) = 0 then 1 else 0
+
+   [[(bvand s t)]] := \lambda x : [0...m).
+                         if [[s]](x) = 0 then 0 else [[t]](x)
+
+   [[(bvor s t)]] := \lambda x : [0...m).
+                         if [[s]](x) = 1 then 1 else [[t]](x)
+
+   where s and t are both of sort (_ BitVec m) and 0 < m.
+
+   - Arithmetic operations
+
+   Now, we can define the following operations.  Suppose s and t are both terms
+   of sort (_ BitVec m), m > 0.
+
+   [[(bvneg s)]] := nat2bv[m](2^m - bv2nat([[s]]))
+
+   [[(bvadd s t)]] := nat2bv[m](bv2nat([[s]]) + bv2nat([[t]]))
+
+   [[(bvmul s t)]] := nat2bv[m](bv2nat([[s]]) * bv2nat([[t]]))
+
+   [[(bvudiv s t)]] := if bv2nat([[t]]) != 0 then
+                          nat2bv[m](bv2nat([[s]]) div bv2nat([[t]]))
+
+   [[(bvurem s t)]] := if bv2nat([[t]]) != 0 then
+                          nat2bv[m](bv2nat([[s]]) rem bv2nat([[t]]))
+
+   - Shift operations
+
+   Suppose s and t are both terms of sort (_ BitVec m), m > 0.  We make use of
+   the definitions given for the arithmetic operations, above.
+
+   [[(bvshl s t)]] := nat2bv[m](bv2nat([[s]]) * 2^(bv2nat([[t]])))
+
+   [[(bvlshr s t)]] := nat2bv[m](bv2nat([[s]]) div 2^(bv2nat([[t]])))
+
+   Finally, we can define bvult:
+
+   [[bvult s t]] := true iff bv2nat([[s]]) < bv2nat([[t]])
+  "
+
+:values
+ "For all m > 0, the values of sort (_ BitVec m) are all binaries #bX with m digits.
+ "
+
+:notes
+  "The constraints on the theory models do not specify the meaning of
+   (bvudiv s t) or (bvurem s t) in case bv2nat([[t]]) is 0.
+   Since the semantics of SMT-LIB's underlying logic associates *total*
+   functions to function symbols, this means that we consider as models
+   of this theory *any* interpretation conforming to the specifications
+   in the definition field (and defining bvudiv and bvurem arbitrarily
+   when the second argument evaluates to 0).
+   Solvers supporting this theory then cannot make any any assumptions
+   about the value of (bvudiv s t) or (bvurem s t) when t evaluates to 0.
+  "
+
+)
+#+end_src
