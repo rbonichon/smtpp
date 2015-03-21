@@ -33,6 +33,28 @@ module StringSet = struct
 end
 ;;
 
+module SymbolMap =
+  Map.Make(
+      struct
+        open Ast ;;
+        type t = symbol ;;
+        let compare s1 s2 =
+          Pervasives.compare s1.symbol_desc s2.symbol_desc ;;
+      end
+    )
+;;
+
+module SymbolSet =
+  Set.Make(
+      struct
+        open Ast ;;
+        type t = symbol ;;
+        let compare s1 s2 =
+          Pervasives.compare s1.symbol_desc s2.symbol_desc ;;
+      end
+    )
+;;
+
 
 let mk_header fmt s =
   let slen = String.length s in
