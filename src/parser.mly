@@ -127,7 +127,7 @@
 %token RPAREN
 %token EOF
 
-%token <int> NUMERAL
+%token <Ast.numeral> NUMERAL
 %token <string> DECIMAL
 %token <string> HEXADECIMAL
 %token <string> BINARY

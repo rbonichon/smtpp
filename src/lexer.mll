@@ -110,7 +110,7 @@ let numeral = ('0' | ['1'-'9'] digit*)
 let hexadigit = (digit | ['a'-'f'])
 let lower = ['a'-'z']
 let upper = ['A'-'Z']
-let other = ['~' '!' '@' '$' '%' '^' '&' '*' 
+let other = ['~' '!' '@' '$' '%' '^' '&' '*'
                  '_' '-' '+' '=' '<' '>' '.' '?' '/''|'
             ]
 let startchar= (lower | upper | other)
@@ -123,7 +123,7 @@ rule token = parse
                 token lexbuf }
   | '('       { LPAREN }
   | ')'       { RPAREN }
-  | numeral   { NUMERAL(int_of_string (Lexing.lexeme lexbuf)) }
+  | numeral   { NUMERAL(Lexing.lexeme lexbuf) }
   | "#b" (['0'-'1']+ as s)
               { BINARY(s) }
   | "#x" (hexadigit+ as s) { HEXADECIMAL(s) }
@@ -143,7 +143,7 @@ rule token = parse
         try Hashtbl.find reserved_table s
         with Not_found -> SYMBOL s
       }
-  | '|' ([^ '|' '\\']* as s) '|' 
+  | '|' ([^ '|' '\\']* as s) '|'
         { QUOTEDSYMBOL s }
   | eof       { EOF }
   | _

@@ -5,6 +5,7 @@ BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
 LIB=lib$(EXE).a
 
+VERSION=$(shell git log -1 --format="%H (%ai)")
 # Load the default OCaml rules from the file Config.mk
 # includes default settings
 include ../Config.mk
@@ -19,8 +20,8 @@ include ../Caml.mk
 
 PARSER = parser
 LEXER = lexer
-MLFILES_PRE = utils config locations io pp
-MLFILES_TRANS = pushpop obfuscator
+MLFILES_PRE = ast_utils utils config locations io pp
+MLFILES_TRANS = undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
 MLIFILES = ast
@@ -37,7 +38,8 @@ CMXFILES_LIB = $(MLFILES_PRE:%=%.cmx) \
 	$(LEXER:%=%.cmx) \
 	$(PARSER:%=%.cmx) \
 	$(MLFILES_TRANS:%=%.cmx) \
-	$(MLFILES_POST:%=%.cmx)
+	$(MLFILES_POST:%=%.cmx) \
+	smtpplib.cmx
 CMOFILES_LIB = $(CMXFILES_LIB:%.cmx=%.cmo)
 
 CMIFILES = $(MLIFILES:%=%.cmi)
@@ -46,7 +48,7 @@ CMOFILES = $(CMXFILES:%.cmx=%.cmo)
 CFILES = libwrap
 CSRC = $(CFILES:%=%.c)
 COBJS = $(CFILES:%=%.o)
-MLOBJS = $(CMXFILES:%.cmx=%.o)
+MLOBJS = $(CMOFILES:%.cmo=%.o)
 
 LIBS =
 OPTLIBDEPS = $(LIBS:%=%.cmxa)
@@ -76,14 +78,18 @@ clean::
 	done
 
 
-lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
-	ocamlmklib -verbose -custom -o smtpp $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
+lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(MLOBJS) $(COBJS)
+	ocamlmklib -verbose -o smtpp $(CMOFILES_LIB) $(MLOBJS) $(COBJS)
+#	ocamlmklib -verbose -o smtpp $(CMXFILES_LIB)
+#	ocamlmklib -verbose -o smtpp $(COBJS)
+# ocamlmklib -verbose -custom -o smtpp $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
 
 .PHONY: beforedepend depend
 
 # There are genereated files so we might need to do depend twice
 # beforedepend serves exactly that purpose
 beforedepend: $(CAMLFILES)
+	sed -i -e 's/let version = ".*"/let version = "$(VERSION)"/g' config.ml
 	$(CAMLDEP) $(CAMLINCLUDES) $(CAMLFILES) > .depend
 
 depend:: beforedepend $(CAMLFILES)

@@ -47,7 +47,7 @@ let set_basename, new_file_name =
   let i = ref 0 in
   let basename = ref "smt_pop" in
   (fun filename ->
-   let bname = Filename.basename filename in 
+   let bname = Filename.basename filename in
    basename := Filename.chop_extension bname) ,
   (fun () -> incr i; sprintf "%s_%d.smt2" !basename !i)
 ;;
@@ -91,7 +91,7 @@ let eval (prelude, stack, cmds) cmd =
   match cmd.command_desc with
   | CmdPush n ->
      begin
-       let n = Utils.default_opt 1 n in
+       let n = int_of_string (Utils.default_opt "1" n) in
        assert (n >= 0);
        match n with
        | 0 -> prelude, stack, cmds
@@ -107,7 +107,7 @@ let eval (prelude, stack, cmds) cmd =
      end
 
   | CmdPop n ->
-     let n = Utils.default_opt 1 n in 
+     let n = int_of_string (Utils.default_opt "1" n) in
      assert (n >= 0);
      (* Substitutes the current environment by what has been previously
       * saved on the stack

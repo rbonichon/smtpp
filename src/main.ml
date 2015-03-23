@@ -41,6 +41,8 @@ let rec argspec =
   " generates obfuscated version of SMT script";
   "-keep", Arg.String Config.set_keep_symbols,
   " do not obfuscate this comma separated list of symbols";
+  "-version", Arg.Unit Config.pp_version,
+  " prints version number";
 ]
 
 and print_usage () =

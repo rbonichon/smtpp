@@ -5,11 +5,12 @@
 .SUFFIXES: .cmx .cmxa .cmo .cmi .cma .ml .mli .mll .mly
 
 
-.cmx.o:
-	$(CAMLBIN) -output-obj -o $@ $<
+.cmo.o:
+	$(PP) "COBJ $@"
+	$(CAMLBYT) -custom -output-obj -o $@ $<
 
 .c.o:
-	$(CAMLBIN) -ccopt "-fPIC -o $@" -c $<
+	$(CAMLBYT) -ccopt "-fPIC -o $@" -c $<
 
 .ml.cmo:
 	$(PP_BYT) $@

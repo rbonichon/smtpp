@@ -4,6 +4,7 @@
 *.cmo
 *.cmx
 *.o
+*.html
 smtpp.byt
 smtpp.opt
 /src/config.cmo
@@ -21,3 +22,18 @@ smtpp.opt
 /src/parser.automaton
 /src/parser.conflicts
 /src/static_smtpp.opt
+/doc/Ast.html
+/doc/auto/
+/doc/style.css
+/src/cmain
+/src/cmain.byt
+/src/cmain.opt
+/src/dllsmtpp.so
+/src/libsmtpp.a
+/src/smtpp.a
+/src/smtpp.cma
+/src/smtpp.cmxa
+*.pickle
+*.svg
+/scripts/exe.log
+/scripts/tools.pdf

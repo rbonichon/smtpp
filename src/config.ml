@@ -50,3 +50,9 @@ let set_keep_symbols, get_keep_symbols =
   ),
   (fun () -> !ks)
 ;;
+
+let version = "fd6c9046260988c168c0f28ce1ebb9d8986f1662 (2015-03-21 11:20:10 -0300)" ;;
+
+let pp_version () =
+  Format.printf "%s@." version
+;;
