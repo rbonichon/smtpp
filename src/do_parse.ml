@@ -30,10 +30,11 @@ let lex_file () =
 let apply () =
   let (lexbuf, _close) = lex_file () in
   try
-     let script = Parser.script Lexer.token lexbuf in
-     if Config.get_pushpop () then Pushpop.apply script;
-     if Config.get_reprint () then Pp.pp Format.std_formatter script;
-     if Config.get_obfuscate () then Obfuscator.apply script;
+    let script = Parser.script Lexer.token lexbuf in
+    Undef_unused.apply script;
+    if Config.get_pushpop () then Pushpop.apply script;
+    if Config.get_reprint () then Pp.pp Format.std_formatter script;
+    if Config.get_obfuscate () then Obfuscator.apply script;
   with
   | Lexer.LexError msg ->
      Format.eprintf "Parse error: %s@." msg;

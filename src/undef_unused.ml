@@ -147,8 +147,13 @@ let apply (script: Ast.script) =
   let vs = eval_commands vstate script.script_commands in
   let unused = SymbolSet.diff vs.defined vs.used in
   let undefined = SymbolSet.diff vs.used vs.defined in
-  Format.printf
-    "%d unused symbols, %d undefined symbols@."
-    (SymbolSet.cardinal unused)
-    (SymbolSet.cardinal undefined)
+  let pp_set (title : string) (s : SymbolSet.t) =
+    if s <> SymbolSet.empty then
+      Format.printf
+        "@[<v 0>%a%a@]"
+        Utils.mk_header title
+        pp_symbols s
+  in
+  pp_set "Unused symbols" unused;
+  pp_set "Undefined symbols" undefined;
 ;;
