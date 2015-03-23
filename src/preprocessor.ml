@@ -1,13 +1,14 @@
 open Ast ;;
+open Format;;
 (* Pre-processing of predefined operators w.r.t. the theories of declared logics*)
 
 module PredefinedOp = struct
-    type predefined_op = 
+    type predefined_op =
       PredefinedOp of Ast.symbol * Ast.sorts option * Ast.sorts * Ast.sort ;;
 
     let equal_symbs sy1 sy2 =
       match sy1.symbol_desc, sy2.symbol_desc with
-      | SimpleSymbol s1, SimpleSymbol s2 -> 
+      | SimpleSymbol s1, SimpleSymbol s2 ->
          String.compare s1 s2 = 0;
       | _, _ -> false
 
@@ -20,7 +21,7 @@ module PredefinedOp = struct
     (*TODO: rewrite it using foldleft. Is it possible?
      * List.fold_left (fun result i1 i2 -> result && (equal_index i1 i2)) true
      * *)
-    let rec equal_indexes i1 i2 = 
+    let rec equal_indexes i1 i2 =
       match i1, i2 with
       | [], [] -> true
       | x1::xs1, x2 :: xs2 -> (equal_index x1 x2) && (equal_indexes xs1 xs2)
@@ -36,48 +37,56 @@ module PredefinedOp = struct
     let rec equal_sorts par_s1 par_s2 =
       match par_s1, par_s2 with
       | [], [] -> true
-      | Some x1 :: xs1, Some x2 :: xs2 -> 
+      | x1 :: xs1, x2 :: xs2 ->
           (equal_sort x1 x2) && (equal_sorts xs1 xs2)
-      | _, _ -> false 
+      | _, _ -> false
 
     and equal_sort ps1 ps2 =
       match ps1.sort_desc, ps2.sort_desc with
       | SortIdentifier id1, SortIdentifier id2 -> (equal_ids id1 id2)
-      | SortFun(id1, s1), SortFun(id2, s2) -> 
+      | SortFun(id1, s1), SortFun(id2, s2) ->
           (equal_ids id1 id2) && (equal_sorts s1 s2)
       | _, _ -> false
 
 
     let equal_predefined_ops op1 op2 =
       match op1, op2 with
-      | PredefinedOp(sy1, par_s1, dom1, codom1), PredefinedOp(sy2, par_s2, dom2,
-      codom2) ->
-        (equal_symbs sy1 sy2) && (equal_sorts par_s1 par_s2) 
+      | PredefinedOp(sy1, Some par_s1, dom1, codom1),
+        PredefinedOp(sy2, Some par_s2, dom2, codom2) ->
+        (equal_symbs sy1 sy2) && (equal_sorts par_s1 par_s2)
         && (equal_sorts dom1 dom2) && (equal_sort codom1 codom2)
+      | PredefinedOp(sy1, None, dom1, codom1),
+        PredefinedOp(sy2, None, dom2, codom2) ->
+        (equal_symbs sy1 sy2) &&
+          (equal_sorts dom1 dom2) && (equal_sort codom1 codom2)
+
   end
 ;;
 
-(* let eval *)
+(* Dummy placeholder *)
+let preprocess_logic _ = Ast.CmdExit ;;
 
 let preprocess_command cmd =
-  match cmd with
-  | CmdSetLogic logic -> preprocess_logic logic
+  let command =
+    match cmd.command_desc  with
+    | CmdSetLogic logic -> preprocess_logic logic
+  in { cmd with command_desc = command }
 ;;
 
 let preprocess_commands cmds = List.map preprocess_command cmds ;;
 
-let get_hashtable = (fun () ->  h)
-  
+let get_hashtable = (fun () ->  ())
+
   let apply script =
   let script_commands = preprocess_commands script.script_commands in
-  let preprocessed_script = { script with script_commands} in
+  let preprocessed_script = { script with script_commands } in
   printf "%a" Pp.pp preprocessed_script;
-  if Config.get_debug () then
-    printf "@[<v 0>%a@ %a@]"
-      Utils.mk_header "Symbol table"
-        (fun fmt h ->
-         SymbHash.iter
-           (fun k v ->
-            Format.fprintf fmt "%a -> %a@ " Pp.pp_symbol k Pp.pp_symbol v)
-             h) (get_hashtable ());
+  (* if Config.get_debug () then
+   *   printf "@[<v 0>%a@ %a@]"
+   *          Utils.mk_header "Symbol table"
+   *          (fun fmt h ->
+   *           SymbHash.iter
+   *          (fun k v ->
+   *           Format.fprintf fmt "%a -> %a@ " Pp.pp_symbol k Pp.pp_symbol v)
+   *            h) (get_hashtable ()); *)
 ;;

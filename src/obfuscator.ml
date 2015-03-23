@@ -190,6 +190,7 @@ let obfuscate_opt opt =
 let obfuscate_command cmd =
   let command_desc =
     match cmd.command_desc with
+    | CmdSetLogic _
     | CmdReset
     | CmdResetAssertions
     | CmdCheckSat
