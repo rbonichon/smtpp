@@ -20,7 +20,7 @@ include ../Caml.mk
 
 PARSER = parser
 LEXER = lexer
-MLFILES_PRE = ast_utils utils config locations io pp
+MLFILES_PRE = ast_utils utils config locations io logic pp 
 MLFILES_TRANS = preprocessor undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main

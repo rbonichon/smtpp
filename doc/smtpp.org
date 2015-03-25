@@ -56,11 +56,23 @@ results. As such, ~veriT~ is able to handle the following example:
 
 ** Theory oracle
 
-Some tools produce SMT-LIB scripts which do not sport any ~set-logic~
+Some tools actually produce SMT-LIB scripts which do not have any ~set-logic~
 command. Even though it is not SMT-LIB compliant to do so, some solvers such as
-CVC4 or Z3 handle these scripts without problems. Thus, the goal of this plug-in
-is to offer capabilities which allow to guess which theory are needed with
-respect to a given script.
+CVC4 or Z3 handle these scripts without problems. Therefore, users might expect
+all the tools to behave likewise.
+
+The goal of this plug-in is to offer capabilities which allow to guess which
+theory are needed with respect to a given script. By pre-processing the file,
+and adding the corresponding ~set-logic~ command, this adds CVC4/Z3-like
+behavior to all SMT-LIB compliant tools.
+
+A simple way of dealing with is to just use the most general logic available,
+like ~AUFNIRA~, and pray it works.
+However, it seems useful to restrict the number of loaded theories as
+much as possible. This is what this small analysis aims to do.
+
+The objective is indeed to infer a safe approximation of the logic seemingly
+used by the script.
 
 
 
