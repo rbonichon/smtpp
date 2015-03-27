@@ -20,7 +20,7 @@ include ../Caml.mk
 
 PARSER = parser
 LEXER = lexer
-MLFILES_PRE = ast_utils utils config locations io logic pp 
+MLFILES_PRE = ast_utils utils config locations io checks sorts theories logic pp
 MLFILES_TRANS = preprocessor undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
@@ -105,7 +105,7 @@ endif
 
 ifneq ($(CAMLDOC),no)
 doc: $(SRCMLFILES)
-	$(CAMLDOC) -html -d ../doc $(SRCMLFILES)
+	$(CAMLDOC) -html -d ../doc/html $(SRCMLFILES)
 endif
 
 .PHONY: stats
