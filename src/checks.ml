@@ -1,3 +1,5 @@
+open Ast ;;
+
 module type Check = sig
     val check_constant : Ast.constant -> Ast.constant ;;
     val check_symbol : Ast.symbol -> Ast.symbol ;;
@@ -11,4 +13,224 @@ module Combine(C1: Check)(C2 : Check) : Check = struct
     let check_symbol s = C2.check_symbol (C1.check_symbol s) ;;
     let check_term t = C2.check_term (C1.check_term t) ;;
     let check_command cmd = C2.check_command (C1.check_command cmd);;
+end
+
+
+module QF = struct
+
+    exception FoundQ ;;
+
+    let rec check_var_binding vbinding =
+      match vbinding.var_binding_desc with
+      | VarBinding (_, term) -> check_term term
+
+    and check_term term =
+      match term.term_desc with
+     | TermSpecConstant _
+     | TermQualIdentifier _ -> ()
+     | TermForallTerm _
+     | TermExistsTerm _ -> raise FoundQ
+     | TermQualIdentifierTerms (_, terms) -> List.iter check_term terms
+     | TermAnnotatedTerm (term, _) -> check_term term
+     | TermLetTerm (vbindings, term) ->
+        List.iter check_var_binding vbindings;
+        check_term term
+    ;;
+
+    let check_fun_def fdef =
+      match fdef.fun_def_desc with
+      | FunDef (_, _, _, _, term) -> check_term term
+    ;;
+
+    let check_fun_rec_def fdef =
+      match fdef.fun_rec_def_desc with
+      | FunRecDef (_, _, _, _, term) -> check_term term
+    ;;
+
+    let check_command cmd =
+      match cmd.command_desc with
+      | CmdAssert term -> check_term term
+      | CmdDefineFun fdef -> check_fun_def fdef
+      | CmdDefineFunRec frdefs -> List.iter check_fun_rec_def frdefs
+      | CmdCheckSat
+      | CmdCheckSatAssuming _
+      | CmdDeclareConst _
+      | CmdDeclareSort _
+      | CmdDeclareFun _
+      | CmdDefineSort _
+      | CmdEcho _
+      | CmdExit
+      | CmdGetInfo _
+      | CmdGetModel
+      | CmdGetOption _
+      | CmdGetProof
+      | CmdGetUnsatAssumptions
+      | CmdGetUnsatCore
+      | CmdMetaInfo _
+      | CmdPop _
+      | CmdPush _
+      | CmdReset
+      | CmdResetAssertions
+      | CmdSetInfo _
+      | CmdSetLogic _
+      | CmdGetAssertions
+      | CmdGetAssignment
+      | CmdSetOption _ -> ()
+      | CmdGetValue terms -> List.iter check_term terms
+    ;;
+
+    let check_script (s : Ast.script) =
+      List.iter check_command s.script_commands
+    ;;
+
+    let has_quantifier (s : Ast.script) =
+      try check_script s; false with FoundQ -> true
+    ;;
+end
+
+
+module ArithmeticCheck = struct
+    open Utils ;;
+
+    type ternary =
+      | True
+      | Maybe
+      | False
+    ;;
+
+    let is_unset (v : ternary) =
+      match v with
+      | True -> false
+      | Maybe | False -> true
+    ;;
+
+
+    type result = {
+        has_int : ternary;
+        has_real : ternary;
+      }
+    ;;
+
+    let int_symbols = StringSet.empty ;;
+    let real_symbols = StringSet.empty ;;
+
+    let check_symbol (r : result) symb =
+      match symb.symbol_desc with
+      | SimpleSymbol sname ->
+         begin
+           let in_int = StringSet.mem sname int_symbols in
+           let in_real = StringSet.mem sname real_symbols in
+           match in_int, in_real with
+           | true, true ->
+              let has_int =
+                match r.has_int with
+                | False -> Maybe
+                | Maybe | True -> r.has_int
+              in let has_real =
+                   match r.has_real with
+                   | False -> Maybe
+                   | Maybe | True -> r.has_int
+                 in { has_int; has_real; }
+           | true, false -> { r with has_int = True; }
+           | false, true -> { r with has_real = True; }
+           | false, false -> r
+         end
+      | QuotedSymbol _ -> r
+    ;;
+
+
+    let check_identifier (r : result) id =
+      match id.id_desc with
+      | IdSymbol sy -> check_symbol r sy
+      | IdUnderscore _ -> r
+
+    let rec check_sort (r : result) sort =
+      match sort.sort_desc with
+      | SortIdentifier id -> check_identifier r id
+      | SortFun (id, sorts) ->
+         List.fold_left check_sort (check_identifier r id) sorts
+
+    let check_qual_identifier (r : result) qid =
+      match qid.qual_identifier_desc with
+        | QualIdentifierIdentifier id -> check_identifier r id
+        | QualIdentifierAs (id, sort) -> check_sort (check_identifier r id) sort
+
+    let rec check_term (r : result) term =
+      match term.term_desc with
+      | TermSpecConstant _ -> r
+      | TermQualIdentifier qid -> check_qual_identifier r qid
+      | TermQualIdentifierTerms (qid, terms) ->
+         List.fold_left check_term (check_qual_identifier r qid) terms
+      | TermLetTerm (vbindings, term) ->
+         List.fold_left check_var_binding (check_term r term) vbindings
+      | TermForallTerm (svars, term)
+      | TermExistsTerm (svars, term) ->
+         let varsorts = List.map Ast_utils.sort_of_svar svars in
+         List.fold_left check_sort (check_term r term) varsorts
+      | TermAnnotatedTerm (term, _) -> check_term r term
+
+    and check_var_binding (r : result) vb =
+      match vb.var_binding_desc with
+      | VarBinding (_, term) -> check_term r term
+    ;;
+
+    let check_fun_decl r svars rsort (body : term) =
+      let varsorts = List.map Ast_utils.sort_of_svar svars in
+      List.fold_left check_sort (check_term r body) (rsort :: varsorts)
+    ;;
+
+    let check_fun_def (r : result) fdef =
+      match fdef.fun_def_desc with
+      | FunDef (_, _, svars, sort, term) -> check_fun_decl r svars sort term
+    ;;
+
+    let check_fun_rec_def (r : result) frdef =
+      match frdef.fun_rec_def_desc with
+      | FunRecDef (_, _, svars, sort, term) ->
+         check_fun_decl r svars sort term
+    ;;
+
+    let check_command (r : result) cmd =
+      match cmd.command_desc with
+      | CmdAssert term -> check_term r term
+      | CmdCheckSat
+      | CmdDeclareSort _
+      | CmdExit
+      | CmdGetAssertions
+      | CmdGetAssignment
+      | CmdGetInfo _
+      | CmdGetModel
+      | CmdGetOption _
+      | CmdGetProof
+      | CmdGetUnsatAssumptions
+      | CmdGetUnsatCore
+      | CmdEcho _
+      | CmdGetValue _
+      | CmdMetaInfo _
+      | CmdPop _
+      | CmdPush _
+      | CmdReset
+      | CmdResetAssertions
+      | CmdSetInfo _
+      | CmdSetLogic _
+      | CmdSetOption _
+      | CmdCheckSatAssuming _ -> r
+      | CmdDeclareConst (_, sort) -> check_sort r sort
+      | CmdDeclareFun (_,  _, sorts_param,  sort) ->
+         List.fold_left check_sort (check_sort r sort) sorts_param
+      | CmdDefineFun fun_def -> check_fun_def r fun_def
+      | CmdDefineFunRec fun_rec_defs ->
+         List.fold_left check_fun_rec_def r fun_rec_defs
+      | CmdDefineSort (_, _, sort) -> check_sort r sort
+    ;;
+
+    let check_script (s : Ast.script) =
+      List.fold_left
+        (fun r cmd -> check_command r cmd)
+        { has_int = False; has_real = False; }
+        s.script_commands
+    ;;
+
+
+
 end

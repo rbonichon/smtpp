@@ -5,6 +5,12 @@ let symbol_of_svar (sv : sorted_var) =
   | SortedVar (sy, _) -> sy
 ;;
 
+let sort_of_svar (sv : sorted_var) =
+  match sv.sorted_var_desc with
+  | SortedVar (_, so) -> so
+;;
+
+
 let symbol_of_vbinding (vb : var_binding) =
   match vb.var_binding_desc with
   | VarBinding (sy, _) -> sy
