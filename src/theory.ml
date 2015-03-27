@@ -1,25 +1,27 @@
 open Sorts ;;
 
+type t = {
+    theory_sorts : Sorts.t list ;
+    theory_symbols : (string * Sorts.t) list ;
+  }
+;;
+
+let mk_theory theory_sorts theory_symbols =
+  { theory_symbols; theory_sorts }
+;;
+
+let combine (t1 : t) (t2 : t) =
+  { theory_sorts = t1.theory_sorts @ t2.theory_sorts;
+    theory_symbols = t1.theory_symbols @ t2.theory_symbols ;
+  }
+;;
+
 module type Theory = sig
-    val sorts : Sorts.t list ;;
-    val symbols : (string * Sorts.t) list ;;
-end
-
-module Combine(T1 : Theory)(T2 : Theory) : Theory = struct
-    let sorts = T1.sorts @ T2.sorts ;;
-    let symbols = T1.symbols @ T2.symbols ;;
-end
-
-module type CheckableTheory = sig
-    include Theory ;;
-    include Checks.Check ;;
-    val set : bool -> unit ;;
-    val get : unit -> bool ;;
+    val theory : t ;;
 end
 
 module EmptyTheory = struct
-    let sorts = [] ;;
-    let symbols = [] ;;
+    let theory = { theory_symbols = []; theory_sorts = []; } ;;
 end
 
 module SMTCore = struct
@@ -40,6 +42,7 @@ module SMTCore = struct
       ]
     ;;
 
+    let theory = mk_theory sorts symbols ;;
 end
 
 module SMTInt = struct
@@ -53,6 +56,8 @@ module SMTInt = struct
       @ List.map (fun e -> (e, intint_int_fun)) ["-"; "*"; "+"; "div"; "mod";]
       @ List.map (fun e -> (e, intint_bool_fun)) ["<="; "<"; ">="; ">";]
     ;;
+
+   let theory = mk_theory sorts symbols ;;
 end
 
 module SMTReal = struct
@@ -67,17 +72,22 @@ module SMTReal = struct
       @ List.map (fun e -> (e, realreal_real_fun)) ["-"; "*"; "+"; "/";]
       @ List.map (fun e -> (e, realreal_bool_fun)) ["<="; "<"; ">="; ">";]
     ;;
+
+    let theory = mk_theory sorts symbols ;;
 end
 
 (* Mixed type accepting both integers and reals *)
 module SMTNumerics = struct
-    include Combine(SMTInt)(SMTReal) ;;
-
-    let symbols = symbols
-      @ ["to_real", x_y_fun int_sort real_sort;
+    let symbols =
+      ["to_real", x_y_fun int_sort real_sort;
          "to_int", x_y_fun real_sort int_sort;
          "is_int", x_y_fun real_sort bool_sort;
         ]
+    ;;
+
+    let theory =
+      let t = combine SMTInt.theory SMTReal.theory in
+      { t with theory_symbols = t.theory_symbols @ symbols }
     ;;
 end
 

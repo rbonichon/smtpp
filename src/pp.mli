@@ -4,6 +4,9 @@ val pp_symbol : Format.formatter -> Ast.symbol -> unit ;;
 val pp: Format.formatter -> Ast.script -> unit ;;
 (** [pp fmt ast] pretty-prints a full SMT-LIB script onto a formatter *)
 
+val pp_extended: Format.formatter -> Extended_ast.script -> unit ;;
+(** [pp_extended fmt ast] pretty-prints a full SMT-LIB script onto a formatter *)
+
 val pp_commands: Format.formatter -> Ast.commands -> unit ;;
 (** pp_commands pretty_prints an arbitrary command list onto a formatter.
     Used by pp.

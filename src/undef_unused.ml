@@ -5,6 +5,8 @@
  *)
 
 open Ast
+open Extended_ast
+open Theory
 open Utils
 ;;
 
@@ -142,8 +144,13 @@ let eval_commands vs cmds =
   List.fold_left eval_command vs cmds
 ;;
 
-let apply (script: Ast.script) =
-  let vstate = { used = SymbolSet.empty; defined = SymbolSet.empty; } in
+let apply (script: Extended_ast.script) =
+  let defined =
+    List.fold_left
+      (fun s (name, _) -> SymbolSet.add (Ast_utils.mk_symbol name) s)
+      SymbolSet.empty script.script_theory.theory_symbols
+  in
+  let vstate = { used = SymbolSet.empty; defined } in
   let vs = eval_commands vstate script.script_commands in
   let unused = SymbolSet.diff vs.defined vs.used in
   let undefined = SymbolSet.diff vs.used vs.defined in

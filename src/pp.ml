@@ -284,7 +284,11 @@ let pp_commands fmt cmds =
  Format.fprintf fmt "@[<v 0>%a@]@." pp_command_list cmds
 ;;
 
-let pp fmt (s:script) = pp_commands fmt s.script_commands ;;
+let pp fmt (s: Ast.script) = pp_commands fmt s.script_commands ;;
+
+let pp_extended fmt (s : Extended_ast.script) =
+  pp fmt (Extended_ast.to_ast_script s)
+;;
 
 let pp_tofile filename program =
   let oc = Pervasives.open_out_bin filename in

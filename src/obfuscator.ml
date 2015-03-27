@@ -16,6 +16,8 @@
 (**************************************************************************)
 
 open Ast ;;
+open Extended_ast ;;
+open Theory ;;
 open Format ;;
 
 module HashedSymb = struct
@@ -32,47 +34,42 @@ module HashedSymb = struct
   end
 ;;
 
-module SymbHash = Hashtbl.Make(HashedSymb) ;;
+module SymbHash = struct
+   include Hashtbl.Make(HashedSymb)
 
-let mk_symbol (s:string) =
-  { symbol_desc = SimpleSymbol s;
-    symbol_loc = Locations.dummy_loc;
-  }
+   let h = create 97 ;;
+   let n = ref (-1) ;;
+   let base = ref "S" ;;
+
+   let init ?keep:(keep = []) () =
+     List.iter (fun s -> let sy = Ast_utils.mk_symbol s in add h sy sy) keep;
+   ;;
+
+   let get_symbol symb =
+     try
+       let sy = find h symb in
+       sy
+     with
+     | Not_found ->
+        begin
+          incr n;
+          let newsymb =
+            { symb with symbol_desc = SimpleSymbol (!base ^ (string_of_int !n)) }
+          in
+          add h symb newsymb;
+          newsymb
+        end
+   ;;
+
+   let get_htable () = h ;;
+end
 ;;
 
-let get_symb, init, get_hashtable =
-  let h = SymbHash.create 97 in
-  let n = ref (-1) in
-  let base = "S" in
-  (fun symb ->
-   try
-     let sy = SymbHash.find h symb in
-     sy
-   with
-   | Not_found ->
-      begin
-        incr n;
-        let newsymb =
-          { symb with symbol_desc = SimpleSymbol (base ^ (string_of_int !n)) }
-        in
-        SymbHash.add h symb newsymb;
-        newsymb
-      end
-  ),
-  (fun () ->
-   let l = Config.get_keep_symbols () in
-   List.iter
-     (fun s ->
-      let sy = mk_symbol s in
-      SymbHash.add h sy sy
-     ) l;
-  ),
-  (fun () ->  h)
-;;
+
 
 let obfuscate_index = function
   | IdxNum n -> IdxNum n
-  | IdxSymbol symb -> IdxSymbol (get_symb symb)
+  | IdxSymbol symb -> IdxSymbol (SymbHash.get_symbol symb)
 ;;
 
 let obfuscate_indexes = List.map obfuscate_index ;;
@@ -80,9 +77,9 @@ let obfuscate_indexes = List.map obfuscate_index ;;
 let obfuscate_id id =
   let id_desc =
     match id.id_desc with
-    | IdSymbol symb -> IdSymbol (get_symb symb)
+    | IdSymbol symb -> IdSymbol (SymbHash.get_symbol symb)
     | IdUnderscore (symb, indexes) ->
-       IdUnderscore (get_symb symb, obfuscate_indexes indexes)
+       IdUnderscore (SymbHash.get_symbol symb, obfuscate_indexes indexes)
   in { id with id_desc }
 ;;
 
@@ -98,7 +95,7 @@ let rec obfuscate_sexpr sexpr =
   let sexpr_desc =
     match sexpr.sexpr_desc with
     | SexprConstant _ | SexprKeyword _ as sdesc -> sdesc
-    | SexprSymbol symb -> SexprSymbol (get_symb symb)
+    | SexprSymbol symb -> SexprSymbol (SymbHash.get_symbol symb)
     | SexprParens sexprs -> SexprParens (obfuscate_sexprs sexprs)
   in { sexpr with sexpr_desc }
 
@@ -108,7 +105,7 @@ let obfuscate_attr_value avalue =
   let attr_value_desc =
     match avalue.attr_value_desc with
     | AttrValSpecConstant c ->  AttrValSpecConstant c
-    | AttrValSymbol symb -> AttrValSymbol (get_symb symb)
+    | AttrValSymbol symb -> AttrValSymbol (SymbHash.get_symbol symb)
     | AttrValSexpr sexprs -> AttrValSexpr (obfuscate_sexprs sexprs)
   in { avalue with attr_value_desc }
 ;;
@@ -127,7 +124,7 @@ let obfuscate_attributes = List.map obfuscate_attribute ;;
 let obfuscate_sorted_var svar =
   let sorted_var_desc =
     match svar.sorted_var_desc with
-    | SortedVar (symb, sort) -> SortedVar (get_symb symb, sort)
+    | SortedVar (symb, sort) -> SortedVar (SymbHash.get_symbol symb, sort)
   in { svar with sorted_var_desc }
 ;;
 
@@ -156,7 +153,7 @@ and obfuscate_vbinding vbinding =
   let var_binding_desc =
     match vbinding.var_binding_desc with
     | VarBinding (symb, term) ->
-       VarBinding (get_symb symb, obfuscate_term term)
+       VarBinding (SymbHash.get_symbol symb, obfuscate_term term)
   in { vbinding with var_binding_desc }
 
 and obfuscate_vbindings vbindings = List.map obfuscate_vbinding vbindings
@@ -166,7 +163,7 @@ let obfuscate_fun_def fdef =
   let fun_def_desc =
     match fdef.fun_def_desc with
     | FunDef (symb, par, vars, sort, t) ->
-       let s = get_symb symb in
+       let s = SymbHash.get_symbol symb in
        FunDef (s, par, obfuscate_sorted_vars vars, sort, obfuscate_term t)
   in { fdef with fun_def_desc }
 ;;
@@ -175,7 +172,7 @@ let obfuscate_fun_rec_def frecdec =
   let fun_rec_def_desc =
     match frecdec.fun_rec_def_desc with
     | FunRecDef (symb, par, vars, sort, t) ->
-        let s = get_symb symb in
+        let s = SymbHash.get_symbol symb in
         FunRecDef (s, par, obfuscate_sorted_vars vars, sort, obfuscate_term t)
   in { frecdec with fun_rec_def_desc }
 ;;
@@ -209,17 +206,17 @@ let obfuscate_command cmd =
     | CmdAssert term ->
        CmdAssert (obfuscate_term term)
     | CmdDeclareConst (symb, sort)  ->
-        let s = get_symb symb in
+        let s = SymbHash.get_symbol symb in
        CmdDeclareConst (s, sort)
     | CmdDeclareFun (symb, par, dom, codom) ->
-        let s = get_symb symb in
+        let s = SymbHash.get_symbol symb in
        CmdDeclareFun (s, par, dom, codom)
     | CmdDefineFun fdef ->
         CmdDefineFun(obfuscate_fun_def fdef)
     | CmdDefineFunRec frecdeflist ->
        CmdDefineFunRec (List.map obfuscate_fun_rec_def frecdeflist)
     | CmdCheckSatAssuming symbs ->
-       CmdCheckSatAssuming (List.map get_symb symbs)
+       CmdCheckSatAssuming (List.map SymbHash.get_symbol symbs)
     | CmdDeclareSort (symb, num) ->
        (* Should we obfuscate declared sort symbols ? *)
        CmdDeclareSort (symb, num)
@@ -239,11 +236,13 @@ let obfuscate_command cmd =
 
 let obfuscate_commands cmds = List.map obfuscate_command cmds ;;
 
-let apply script =
-  init (); (* Init hash table with symbols that should be kept *)
+let apply (script : Extended_ast.script) =
+  let theory_keeps = List.map fst script.script_theory.theory_symbols in
+  let keep = (Config.get_keep_symbols ()) @ theory_keeps in
+  SymbHash.init ~keep (); (* Init hash table with symbols that should be kept *)
   let script_commands = obfuscate_commands script.script_commands in
   let obfuscated_script = { script with script_commands } in
-  printf "%a" Pp.pp obfuscated_script;
+  printf "%a" Pp.pp_extended obfuscated_script;
   if Config.get_debug () then
     printf "@[<v 0>%a@ %a@]"
            Utils.mk_header "Symbol table"
@@ -251,5 +250,5 @@ let apply script =
             SymbHash.iter
               (fun k v ->
                Format.fprintf fmt "%a -> %a@ " Pp.pp_symbol k Pp.pp_symbol v)
-              h) (get_hashtable ());
+              h) (SymbHash.get_htable ());
 ;;

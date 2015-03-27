@@ -1,6 +1,6 @@
 open Format ;;
 
-type arith_sorts = Integer | Real | Mixed ;;
+type arith_sort = Integer | Real | Mixed ;;
 type arith_kind = Linear | NonLinear | Descriptive ;;
 
 type t = {
@@ -9,7 +9,7 @@ type t = {
     mutable uninterpreted_functions : bool ;
     mutable bitvectors : bool ;
     mutable quantifiers : bool ;
-    mutable arithmetic_sort : arith_sorts option ;
+    mutable arithmetic_sort : arith_sort option ;
     mutable arithmetic_kind : arith_kind option ;
   }
 ;;
