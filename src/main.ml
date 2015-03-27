@@ -43,6 +43,8 @@ let rec argspec =
   " do not obfuscate this comma separated list of symbols";
   "-version", Arg.Unit Config.pp_version,
   " prints version number";
+  "-detect-logic", Arg.Unit (fun () -> Config.set_detect true),
+  " infer the logic used by SMT-LIB script (alpha)";
 ]
 
 and print_usage () =

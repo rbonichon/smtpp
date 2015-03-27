@@ -19,7 +19,7 @@ let symbol_of_vbinding (vb : var_binding) =
 let get_logic (s : Ast.script) =
   let rec aux (cmds : Ast.commands) =
     match cmds with
-    | [] -> raise Not_found (* This is actually forbidden by the SMT-LIB standard *)
+    | [] -> ""
     | { command_desc = CmdSetLogic symb; _ } :: _ ->
        begin
          match symb.symbol_desc with

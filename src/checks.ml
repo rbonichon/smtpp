@@ -1,4 +1,5 @@
 open Ast ;;
+open Logic ;;
 
 module type Check = sig
     val check_constant : Ast.constant -> Ast.constant ;;
@@ -15,6 +16,26 @@ module Combine(C1: Check)(C2 : Check) : Check = struct
     let check_command cmd = C2.check_command (C1.check_command cmd);;
 end
 
+
+module UF = struct
+
+    exception FoundUF ;;
+
+    let check_command cmd =
+      match cmd.command_desc with
+        | CmdDeclareFun _
+        | CmdDefineFun _
+        | CmdDefineFunRec _ -> raise FoundUF;
+        | _ -> ()
+    ;;
+
+    let has_uninterpreted_functions (s : Ast.script) =
+      try
+        List.iter check_command s.script_commands;
+        false
+      with FoundUF -> true
+    ;;
+end
 
 module QF = struct
 
@@ -91,6 +112,7 @@ end
 
 module ArithmeticCheck = struct
     open Utils ;;
+    open Theory ;;
 
     type ternary =
       | True
@@ -111,8 +133,19 @@ module ArithmeticCheck = struct
       }
     ;;
 
-    let int_symbols = StringSet.empty ;;
-    let real_symbols = StringSet.empty ;;
+    let int_symbols =
+      List.fold_left
+        (fun s name -> StringSet.add name s)
+        StringSet.empty
+        (all_symbol_strings SMTInt.theory)
+    ;;
+
+    let real_symbols =
+      List.fold_left
+        (fun s name -> StringSet.add name s)
+        StringSet.empty
+        (all_symbol_strings SMTReal.theory)
+    ;;
 
     let check_symbol (r : result) symb =
       match symb.symbol_desc with
@@ -129,10 +162,14 @@ module ArithmeticCheck = struct
               in let has_real =
                    match r.has_real with
                    | False -> Maybe
-                   | Maybe | True -> r.has_int
+                   | Maybe | True -> r.has_real
                  in { has_int; has_real; }
-           | true, false -> { r with has_int = True; }
-           | false, true -> { r with has_real = True; }
+           | true, false ->
+              Io.debug "Int detected at %a@." Pp.pp_symbol symb;
+              { r with has_int = True; }
+           | false, true ->
+              Io.debug "Real detected at %a@." Pp.pp_symbol symb;
+              { r with has_real = True; }
            | false, false -> r
          end
       | QuotedSymbol _ -> r
@@ -231,6 +268,26 @@ module ArithmeticCheck = struct
         s.script_commands
     ;;
 
-
-
+    let arithmetic s =
+      match check_script s with
+      | { has_int = True; has_real = True } -> (Some Mixed), (Some NonLinear)
+      | { has_int = True; has_real = _ } -> (Some Integer), (Some NonLinear)
+      | { has_int = _; has_real = True } -> (Some Real), (Some NonLinear)
+      | { has_int = False; has_real = False } -> None, None
+      | _ -> assert false
+    ;;
 end
+
+
+let detect_logic (s : Ast.script) =
+  let arithmetic_sort, arithmetic_kind = ArithmeticCheck.arithmetic s in
+  let uninterpreted_functions = UF.has_uninterpreted_functions s in
+  let quantifiers = QF.has_quantifier s in
+  let logic = { Logic.default
+              with uninterpreted_functions; quantifiers;
+                   arithmetic_kind; arithmetic_sort ; } in
+  Format.printf "Detected logic : %a (set by script at \"%s\")@."
+                pp_from_core logic
+                (Ast_utils.get_logic s)
+  ;
+;;

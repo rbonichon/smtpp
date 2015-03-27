@@ -16,6 +16,12 @@ let combine (t1 : t) (t2 : t) =
   }
 ;;
 
+let all_symbol_strings (t : t) =
+  (List.map Sorts.basic_sort_name t.theory_sorts)
+  @ List.map fst t.theory_symbols
+;;
+
+
 module type Theory = sig
     val theory : t ;;
 end

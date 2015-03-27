@@ -19,6 +19,13 @@ let xx_y_fun x y = Fun([x; x;], y) ;;
 let x_y_fun x y = Fun([x; ], y) ;;
 
 
+let basic_sort_name (sort : t) =
+  match sort with
+  | Basic (sid, _) -> sid
+  | _ -> assert false
+;;
+
+
 module SortSet =
   Set.Make(struct
               type t;;
