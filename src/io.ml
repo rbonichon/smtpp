@@ -87,7 +87,7 @@ let result txt = glog false res_output txt;;
 
 let log txt = glog (get_tagging ()) log_output txt ;;
 
-let warn loc msg =  warning "%s" msg ;;
+let warn _loc msg =  warning "%s" msg ;;
 
 
 

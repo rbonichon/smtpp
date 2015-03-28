@@ -30,6 +30,7 @@ module EmptyTheory = struct
     let theory = { theory_symbols = []; theory_sorts = []; } ;;
 end
 
+
 module SMTCore = struct
     let sorts = [ bool_sort; ] ;;
 
@@ -99,4 +100,9 @@ end
 
 module SMTBitVectors = struct
     include EmptyTheory ;;
+
 end
+
+module SMTArray = struct
+    include EmptyTheory ;;
+  end

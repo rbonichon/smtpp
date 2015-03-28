@@ -17,8 +17,117 @@ module Combine(C1: Check)(C2 : Check) : Check = struct
 end
 
 
-module UF = struct
 
+module Array = struct
+    exception FoundArray ;;
+    let is_array (name : string) = String.compare name "Array" = 0 ;;
+
+    let check_symbol (sy : Ast.symbol) =
+      Io.debug "Array detection ? %a@." Pp.pp_symbol sy;
+      match sy.symbol_desc with
+      | SimpleSymbol name ->
+         Io.debug "Simple symbol : %s@." name;
+         if is_array name then raise FoundArray
+      | QuotedSymbol _name -> ()
+    ;;
+
+    let check_identifier (id : Ast.identifier) =
+      match id.id_desc with
+      | IdSymbol sy -> check_symbol sy
+      | IdUnderscore (sy, _idx) -> check_symbol sy
+    ;;
+
+    let rec check_sort (sort : Ast.sort) =
+      match sort.sort_desc with
+      | SortIdentifier id -> check_identifier id
+      | SortFun (id, sorts) ->
+         check_identifier id;
+         List.iter check_sort sorts;
+    ;;
+
+    let rec check_term (term : Ast.term) =
+      match term.term_desc with
+      | TermSpecConstant _
+      | TermQualIdentifier _ -> ()
+      | TermQualIdentifierTerms (_, terms) -> List.iter check_term terms
+      | TermLetTerm (vbindings, term) ->
+         List.iter check_var_binding vbindings;
+         check_term term
+      | TermForallTerm (svars, term)
+      | TermExistsTerm (svars, term) ->
+         List.iter check_sort (List.map Ast_utils.sort_of_svar svars);
+         check_term term
+      | TermAnnotatedTerm (term, _) -> check_term term
+
+    and check_var_binding (vb : Ast.var_binding) =
+      match vb.var_binding_desc with
+      | VarBinding (_, term) -> check_term term
+    ;;
+
+    let check_fun_decl svars rsort body =
+      let sortnames = rsort :: (List.map Ast_utils.sort_of_svar svars) in
+      List.iter check_sort sortnames;
+      check_term body;
+    ;;
+
+    let check_fun_def (fdef : Ast.fun_def) =
+      match fdef.fun_def_desc with
+      | FunDef (_, _, svars, rsort, body) -> check_fun_decl svars rsort body
+    ;;
+
+    let check_fun_rec_def (frdef : Ast.fun_rec_def) =
+      match frdef.fun_rec_def_desc with
+      | FunRecDef (_, _, svars, rsort, body) -> check_fun_decl svars rsort body
+    ;;
+
+    let check_command (cmd : Ast.command) =
+      match cmd.command_desc with
+      | CmdAssert term -> check_term term
+      | CmdDefineFun fdef -> check_fun_def fdef
+      | CmdDefineFunRec frdefs -> List.iter check_fun_rec_def frdefs
+      | CmdDeclareFun (_, _, sorts, rsort) ->
+         List.iter check_sort (rsort :: sorts)
+      | CmdDefineSort (_, _, sort) -> check_sort sort
+      | CmdDeclareSort (sy, _) -> check_symbol sy
+      | CmdCheckSat
+      | CmdCheckSatAssuming _
+      | CmdDeclareConst _
+      | CmdEcho _
+      | CmdExit
+      | CmdGetInfo _
+      | CmdGetModel
+      | CmdGetOption _
+      | CmdGetProof
+      | CmdGetUnsatAssumptions
+      | CmdGetUnsatCore
+      | CmdMetaInfo _
+      | CmdPop _
+      | CmdPush _
+      | CmdReset
+      | CmdResetAssertions
+      | CmdSetInfo _
+      | CmdSetLogic _
+      | CmdGetAssertions
+      | CmdGetAssignment
+      | CmdSetOption _ -> ()
+      | CmdGetValue terms -> List.iter check_term terms
+    ;;
+
+    let check_script (s : Ast.script) =
+      List.iter check_command s.script_commands
+    ;;
+
+    let has_arrays (s : Ast.script) =
+      try check_script s; false with FoundArray -> true ;;
+end
+
+module BV = struct
+    exception FoundArray ;;
+
+    let has_bitvectors (s : Ast.script) = false ;;
+end
+
+module UF = struct
     exception FoundUF ;;
 
     let check_command cmd =
@@ -130,6 +239,7 @@ module ArithmeticCheck = struct
     type result = {
         has_int : ternary;
         has_real : ternary;
+        kind : Logic.arith_kind option;
       }
     ;;
 
@@ -163,7 +273,7 @@ module ArithmeticCheck = struct
                    match r.has_real with
                    | False -> Maybe
                    | Maybe | True -> r.has_real
-                 in { has_int; has_real; }
+                 in { r with has_int; has_real; }
            | true, false ->
               Io.debug "Int detected at %a@." Pp.pp_symbol symb;
               { r with has_int = True; }
@@ -264,16 +374,16 @@ module ArithmeticCheck = struct
     let check_script (s : Ast.script) =
       List.fold_left
         (fun r cmd -> check_command r cmd)
-        { has_int = False; has_real = False; }
+        { has_int = False; has_real = False; kind = Some NonLinear;}
         s.script_commands
     ;;
 
     let arithmetic s =
       match check_script s with
-      | { has_int = True; has_real = True } -> (Some Mixed), (Some NonLinear)
-      | { has_int = True; has_real = _ } -> (Some Integer), (Some NonLinear)
-      | { has_int = _; has_real = True } -> (Some Real), (Some NonLinear)
-      | { has_int = False; has_real = False } -> None, None
+      | { has_int = True; has_real = True; kind } -> (Some Mixed), kind
+      | { has_int = True; has_real = _; kind } -> (Some Integer), kind
+      | { has_int = _; has_real = True; kind } -> (Some Real), kind
+      | { has_int = False; has_real = False; kind } -> None, kind
       | _ -> assert false
     ;;
 end
@@ -283,8 +393,11 @@ let detect_logic (s : Ast.script) =
   let arithmetic_sort, arithmetic_kind = ArithmeticCheck.arithmetic s in
   let uninterpreted_functions = UF.has_uninterpreted_functions s in
   let quantifiers = QF.has_quantifier s in
+  let array = Array.has_arrays s in
+  let bitvectors = BV.has_bitvectors s in
   let logic = { Logic.default
-              with uninterpreted_functions; quantifiers;
+              with array; bitvectors;
+                   uninterpreted_functions; quantifiers;
                    arithmetic_kind; arithmetic_sort ; } in
   Format.printf "Detected logic : %a (set by script at \"%s\")@."
                 pp_from_core logic
