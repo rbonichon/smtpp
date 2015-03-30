@@ -47,6 +47,7 @@ module SMTCore = struct
        "not"     , x_y_fun bool_sort bool_sort;
        "and"     , boolbool_bool_fun;
        "or"      , boolbool_bool_fun;
+       "=>"      , boolbool_bool_fun;
        "xor"     , boolbool_bool_fun;
        "="       , generalize (xx_y_fun (mk_var ()) bool_sort);
        "distinct", generalize (xx_y_fun (mk_var ()) bool_sort);
@@ -91,10 +92,10 @@ end
 (* Mixed type accepting both integers and reals *)
 module SMTNumerics = struct
     let symbols =
-      ["to_real", x_y_fun int_sort real_sort;
-         "to_int", x_y_fun real_sort int_sort;
-         "is_int", x_y_fun real_sort bool_sort;
-        ]
+      [ "to_real", x_y_fun int_sort real_sort;
+        "to_int", x_y_fun real_sort int_sort;
+        "is_int", x_y_fun real_sort bool_sort;
+      ]
     ;;
 
     let theory =
@@ -106,7 +107,21 @@ end
 module SMTBitVectors = struct
     let sorts = [ bitvector_sort ] ;;
 
-    let symbols = [ ]
+    let symbols = [
+        "bvand", unit_sort;
+        "bvor", unit_sort;
+        "bvneg", unit_sort;
+        "bvnot", unit_sort;
+        "bvadd", unit_sort;
+        "bvsub", unit_sort;
+        "bvlshr", unit_sort;
+        "bvlshl", unit_sort;
+        "bvshr", unit_sort;
+        "bvshl", unit_sort;
+        "sign_extend", unit_sort;
+        "concat", unit_sort;
+        "extract", unit_sort;
+      ]
     ;;
 
     let theory =

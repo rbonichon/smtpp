@@ -137,7 +137,7 @@ let bool_sort = mk_basic "Bool" 0 ;;
 let real_sort = mk_basic "Real" 0 ;;
 let unit_sort = mk_basic "Unit" 0 ;;
 let array_sort = generics "Array" 1 ;;
-let bitvector_sort = generics "BitVector" 1 ;;
+let bitvector_sort = generics "BitVec" 1 ;;
 
 let xx_y_fun x y = Fun([x; x;], y) ;;
 let x_y_fun x y = Fun([x; ], y) ;;

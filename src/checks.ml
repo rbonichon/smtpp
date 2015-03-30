@@ -227,7 +227,7 @@ module BV = struct
       List.iter check_command s.script_commands
     ;;
 
-    let has_bitvectors (s : Ast.script) = 
+    let has_bitvectors (s : Ast.script) =
       try check_script s; false with Found -> true   ;;
 end
 
@@ -466,10 +466,15 @@ module ArithmeticCheck = struct
     ;;
 
     let check_script (s : Ast.script) =
-      List.fold_left
-        (fun r cmd -> check_command r cmd)
-        { has_int = False; has_real = False; kind = Some NonLinear;}
-        s.script_commands
+      let arith =
+        List.fold_left
+          (fun r cmd -> check_command r cmd)
+          { has_int = False; has_real = False; kind = None;}
+          s.script_commands
+      in  if (arith.has_int <> False || arith.has_real <> False)
+             && arith.kind = None
+          then { arith with kind = Some NonLinear }
+          else arith
     ;;
 
     let arithmetic s =
