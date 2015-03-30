@@ -1,4 +1,5 @@
 open Sorts ;;
+open Utils ;;
 
 type t = {
     theory_sorts : Sorts.t list ;
@@ -16,14 +17,13 @@ let combine (t1 : t) (t2 : t) =
   }
 ;;
 
-let all_symbol_strings (t : t) =
+let all_symbol_strings (t : t) : Utils.StringSet.t =
   let sortset =
     List.fold_left
       (fun set so -> Utils.StringSet.union set (Sorts.basic_sorts so))
       Utils.StringSet.empty t.theory_sorts
   in
-  (Utils.StringSet.fold (fun sortid l -> sortid :: l) sortset [])
-  @ List.map fst t.theory_symbols
+  StringSet.union sortset (StringSet.of_list (List.map fst t.theory_symbols))
 ;;
 
 

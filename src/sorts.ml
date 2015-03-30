@@ -82,7 +82,6 @@ let mk_basic (name : string) (arity : int) = Basic (name, arity)
 
 let mk_fun (sorts : t list) (rsort : t) = Fun(sorts, rsort) ;;
 
-
 let compute_arity (sort : t) =
   let rec aux (applied : int) = function
     | Basic (_, arity) -> arity - applied
@@ -100,12 +99,12 @@ let mk_app (asort : t) (sorts : t list) =
     let bmsg =
       if nparams > arity_left then "Too many parameters"
       else "Not enough parameters"
-    in (
-      Io.error
-        "@[<hov 2>%s: cannot apply sort %a to sorts [%a]@]@."
-        bmsg pp_sort asort (pp_sorts ",") sorts;
-      exit 3;
-    )
+    in
+    let msg =
+      Utils.sfprintf
+      "@[<hov 2>%s: cannot apply sort %a to sorts [%a]@]@."
+        bmsg pp_sort asort (pp_sorts ",") sorts
+    in raise (Invalid_argument msg)
   else App(asort, sorts)
 ;;
 
@@ -139,7 +138,6 @@ let real_sort = mk_basic "Real" 0 ;;
 let unit_sort = mk_basic "Unit" 0 ;;
 let array_sort = generics "Array" 1 ;;
 let bitvector_sort = generics "BitVector" 1 ;;
-
 
 let xx_y_fun x y = Fun([x; x;], y) ;;
 let x_y_fun x y = Fun([x; ], y) ;;
