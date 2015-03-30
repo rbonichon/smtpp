@@ -238,7 +238,7 @@ index:
 
 identifier:
 | symb=symbol { mk_identifier (IdSymbol symb) }
-| UNDERSCORE symb=symbol indexes=index+
+| LPAREN UNDERSCORE symb=symbol; indexes=index+; RPAREN
   { mk_identifier (IdUnderscore (symb, indexes)) }
 ;
 
