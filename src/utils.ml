@@ -29,7 +29,9 @@ module StringSet = struct
               struct
                 type t = string
                 let compare = String.compare
-              end )
+              end );;
+
+ let to_list set = fold (fun v l -> v :: l) set []
 end
 ;;
 

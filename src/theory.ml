@@ -17,7 +17,12 @@ let combine (t1 : t) (t2 : t) =
 ;;
 
 let all_symbol_strings (t : t) =
-  (List.map Sorts.basic_sort_name t.theory_sorts)
+  let sortset =
+    List.fold_left
+      (fun set so -> Utils.StringSet.union set (Sorts.basic_sorts so))
+      Utils.StringSet.empty t.theory_sorts
+  in
+  (Utils.StringSet.fold (fun sortid l -> sortid :: l) sortset [])
   @ List.map fst t.theory_symbols
 ;;
 
@@ -39,13 +44,13 @@ module SMTCore = struct
     let symbols =
       ["true"    , bool_sort ;
        "false"   , bool_sort ;
-       "not"     , Fun([bool_sort;], bool_sort);
+       "not"     , x_y_fun bool_sort bool_sort;
        "and"     , boolbool_bool_fun;
        "or"      , boolbool_bool_fun;
        "xor"     , boolbool_bool_fun;
-       "="       , Poly(["X"], Fun([Var "X"; Var "X"], bool_sort));
-       "distinct", Poly(["X"], Fun([Var "X"; Var "X"], bool_sort));
-       "ite"     , Poly(["X"], Fun([Var "X"; Var "X"], Var "X"));
+       "="       , generalize (xx_y_fun (mk_var ()) bool_sort);
+       "distinct", generalize (xx_y_fun (mk_var ()) bool_sort);
+       "ite"     , let v = mk_var () in mk_fun [bool_sort; v; v;] v;
       ]
     ;;
 
@@ -70,7 +75,7 @@ end
 module SMTReal = struct
     let sorts = [ real_sort; ] ;;
 
-    let real_real_fun = Fun([real_sort;], real_sort) ;;
+    let real_real_fun = x_y_fun real_sort real_sort ;;
     let realreal_real_fun = xx_y_fun real_sort real_sort ;;
     let realreal_bool_fun = xx_y_fun real_sort bool_sort ;;
 
@@ -99,10 +104,9 @@ module SMTNumerics = struct
 end
 
 module SMTBitVectors = struct
-    let sorts = [ Basic("BitVector", 1); ] ;;
+    let sorts = [ bitvector_sort ] ;;
 
-    let symbols =
-      [ ]
+    let symbols = [ ]
     ;;
 
     let theory =
@@ -113,7 +117,7 @@ module SMTBitVectors = struct
 end
 
 module SMTArray = struct
-    let sorts = [ Basic("Array", 1); ] ;;
+    let sorts = [ array_sort;  ] ;;
 
     let symbols =
       [ "select", unit_sort;

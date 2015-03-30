@@ -124,7 +124,7 @@ end
 module BV = struct
     exception FoundArray ;;
 
-    let has_bitvectors (s : Ast.script) = false ;;
+    let has_bitvectors (_s : Ast.script) = false ;;
 end
 
 module UF = struct
