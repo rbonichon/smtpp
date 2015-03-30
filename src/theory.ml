@@ -59,31 +59,57 @@ module SMTCore = struct
 end
 
 module SMTInt = struct
+    open Logic ;;
     let sorts = [ int_sort; ] ;;
 
-    let symbols =
+    let symbols, kind_map =
       let intint_bool_fun = xx_y_fun int_sort bool_sort in
       let intint_int_fun = xx_y_fun int_sort int_sort in
       let int_int_fun = x_y_fun int_sort int_sort in
-      ["-"  , int_int_fun; "abs", int_int_fun; ]
-      @ List.map (fun e -> (e, intint_int_fun)) ["-"; "*"; "+"; "div"; "mod";]
-      @ List.map (fun e -> (e, intint_bool_fun)) ["<="; "<"; ">="; ">";]
+      let arith_op = [("-", Descriptive);
+                      ("*", Linear);
+                      ("+", Linear);
+                      ("div", Linear);
+                      ("mod", Linear);
+                     ] in
+      let comp_op = ["<="; "<"; ">="; ">";] in
+      (["-"  , int_int_fun; "abs", int_int_fun; ]
+       @ List.map (fun (e, _) -> (e, intint_int_fun)) arith_op
+       @ List.map (fun e -> (e, intint_bool_fun)) comp_op)
+      ,
+      List.fold_left
+        (fun m (name, kind) -> StringMap.add name kind m)
+        (List.fold_left
+           (fun m name -> StringMap.add name Descriptive m) StringMap.empty
+           comp_op) arith_op
     ;;
 
    let theory = mk_theory sorts symbols ;;
 end
 
 module SMTReal = struct
+    open Logic ;;
     let sorts = [ real_sort; ] ;;
 
-    let real_real_fun = x_y_fun real_sort real_sort ;;
-    let realreal_real_fun = xx_y_fun real_sort real_sort ;;
-    let realreal_bool_fun = xx_y_fun real_sort bool_sort ;;
-
-    let symbols =
-      ["-"  , real_real_fun; ]
-      @ List.map (fun e -> (e, realreal_real_fun)) ["-"; "*"; "+"; "/";]
-      @ List.map (fun e -> (e, realreal_bool_fun)) ["<="; "<"; ">="; ">";]
+    let symbols, kind_map =
+      let realreal_bool_fun = xx_y_fun real_sort bool_sort in
+      let realreal_real_fun = xx_y_fun real_sort real_sort in
+      let real_real_fun = x_y_fun real_sort real_sort in
+      let arith_op = [("-", Descriptive);
+                      ("*", Linear);
+                      ("+", Linear);
+                      ("/", Linear);
+                     ] in
+      let comp_op = ["<="; "<"; ">="; ">";] in
+      ("-"  , real_real_fun) ::
+        List.map (fun (e, _) -> (e, realreal_real_fun)) arith_op
+       @ List.map (fun e -> (e, realreal_bool_fun)) comp_op
+      ,
+      List.fold_left
+        (fun m (name, kind) -> StringMap.add name kind m)
+        (List.fold_left
+           (fun m name -> StringMap.add name Descriptive m) StringMap.empty
+           comp_op) arith_op
     ;;
 
     let theory = mk_theory sorts symbols ;;

@@ -339,7 +339,6 @@ module ArithmeticCheck = struct
       | Maybe | False -> true
     ;;
 
-
     type result = {
         has_int : ternary;
         has_real : ternary;
@@ -348,8 +347,17 @@ module ArithmeticCheck = struct
     ;;
 
     let int_symbols = all_symbol_strings SMTInt.theory ;;
-
     let real_symbols = all_symbol_strings SMTReal.theory ;;
+    let kmap =
+      StringMap.merge
+        (fun _ x y ->
+         match x, y with
+         | Some x1, Some y1 -> assert (x1 = y1); Some x1
+         | Some x, None -> Some x
+         | None, Some y -> Some y
+         | None, None -> None
+        ) SMTInt.kind_map SMTReal.kind_map
+    ;;
 
     let check_symbol (r : result) symb =
       match symb.symbol_desc with
@@ -362,18 +370,24 @@ module ArithmeticCheck = struct
               let has_int =
                 match r.has_int with
                 | False -> Maybe
-                | Maybe | True -> r.has_int
-              in let has_real =
-                   match r.has_real with
-                   | False -> Maybe
-                   | Maybe | True -> r.has_real
-                 in { r with has_int; has_real; }
+                | Maybe | True -> r.has_int in
+              let has_real =
+                match r.has_real with
+                | False -> Maybe
+                | Maybe | True -> r.has_real in
+              let kind =
+                try Some (StringMap.find sname kmap) with Not_found -> r.kind in
+              { has_int; has_real; kind; }
            | true, false ->
               Io.debug "Int detected at %a@." Pp.pp_symbol symb;
-              { r with has_int = True; }
+              let kind =
+                try Some (StringMap.find sname kmap) with Not_found -> r.kind in
+              { r with has_int = True; kind; }
            | false, true ->
               Io.debug "Real detected at %a@." Pp.pp_symbol symb;
-              { r with has_real = True; }
+              let kind =
+                try Some (StringMap.find sname kmap) with Not_found -> r.kind in
+              { r with has_real = True; kind; }
            | false, false -> r
          end
       | QuotedSymbol _ -> r

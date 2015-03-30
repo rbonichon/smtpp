@@ -1,7 +1,10 @@
 open Format ;;
 
 type arith_sort = Integer | Real | Mixed ;;
-type arith_kind = Linear | NonLinear | Descriptive ;;
+type arith_kind = Descriptive | Linear | NonLinear ;;
+(* Kind of arithmetics used in SMT-LIB benchmarks.
+   They form a simple lattice.
+*)
 
 type t = {
     smt_name : string;
