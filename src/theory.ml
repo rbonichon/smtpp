@@ -99,10 +99,31 @@ module SMTNumerics = struct
 end
 
 module SMTBitVectors = struct
-    include EmptyTheory ;;
+    let sorts = [ Basic("BitVector", 1); ] ;;
 
+    let symbols =
+      [ ]
+    ;;
+
+    let theory =
+      { theory_symbols = symbols;
+        theory_sorts = sorts;
+      }
+    ;;
 end
 
 module SMTArray = struct
-    include EmptyTheory ;;
-  end
+    let sorts = [ Basic("Array", 1); ] ;;
+
+    let symbols =
+      [ "select", unit_sort;
+        "store", unit_sort;
+      ]
+    ;;
+
+    let theory =
+      { theory_symbols = symbols;
+        theory_sorts = sorts;
+      }
+    ;;
+end

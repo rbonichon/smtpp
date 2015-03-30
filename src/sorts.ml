@@ -13,6 +13,7 @@ type t =
 let int_sort = Basic("Int", 0) ;;
 let bool_sort = Basic("Bool", 0) ;;
 let real_sort = Basic("Real", 0) ;;
+let unit_sort = Basic("Unit", 0) ;;
 let array_sort = Poly(["X"], App(Basic("Array", 1), [Var "X";])) ;;
 
 let xx_y_fun x y = Fun([x; x;], y) ;;
