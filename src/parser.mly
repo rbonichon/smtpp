@@ -19,66 +19,62 @@
     open Ast
     open Locations ;;
 
-    (* Localizing a symbol *)
-    let symbol_rloc () = {
-        loc_start = Parsing.symbol_start_pos ();
-        loc_end = Parsing.symbol_end_pos ();
+    (* Helper construction functions.
+       File locations is handled in production rules.
+       *)
+    let mk_sexpr sexpr_desc sexpr_loc = { sexpr_desc; sexpr_loc; } ;;
+    let mk_identifier id_desc id_loc = { id_desc; id_loc; } ;;
+
+    let mk_sort sort_desc sort_loc = { sort_desc; sort_loc; } ;;
+
+    let mk_command command_desc command_loc =
+      { command_desc; command_loc; }
+    ;;
+
+    let mk_fun_def fun_def_desc fun_def_loc =
+      { fun_def_desc; fun_def_loc; }
+    ;;
+
+    let mk_fun_rec_def fun_rec_def_desc fun_rec_def_loc =
+      { fun_rec_def_desc; fun_rec_def_loc; }
+    ;;
+
+    let mk_sorted_var sorted_var_desc sorted_var_loc =
+      { sorted_var_desc; sorted_var_loc; }
+    ;;
+
+    let mk_qual_identifier qual_identifier_desc qual_identifier_loc =
+      { qual_identifier_desc; qual_identifier_loc; }
+    ;;
+
+    let mk_var_binding var_binding_desc var_binding_loc =
+      { var_binding_desc; var_binding_loc; }
+    ;;
+
+    let mk_term term_desc term_loc = { term_desc; term_loc; } ;;
+
+    let mk_smt_option smt_option_desc smt_option_loc = {
+        smt_option_desc; smt_option_loc ;
       }
     ;;
 
-    (* Helper construction functions. Automated marking of file locations *)
-    let mk_sexpr sexpr_desc = { sexpr_desc; sexpr_loc = symbol_rloc (); } ;;
-    let mk_identifier id_desc = { id_desc; id_loc = symbol_rloc (); } ;;
-
-    let mk_sort sort_desc = { sort_desc; sort_loc = symbol_rloc (); } ;;
-    let mk_command command_desc =
-      { command_desc; command_loc = symbol_rloc (); }
+    let mk_script script_commands script_loc =
+      { script_commands; script_loc; }
     ;;
 
-    let mk_fun_def fun_def_desc =
-      { fun_def_desc; fun_def_loc = symbol_rloc (); }
+    let mk_attribute attribute_desc attribute_loc =
+      { attribute_desc; attribute_loc; }
     ;;
 
-    let mk_fun_rec_def fun_rec_def_desc =
-      { fun_rec_def_desc; fun_rec_def_loc = symbol_rloc (); }
+    let mk_attr_value attr_value_desc attr_value_loc =
+      { attr_value_desc; attr_value_loc; }
     ;;
 
-    let mk_sorted_var sorted_var_desc =
-      { sorted_var_desc; sorted_var_loc = symbol_rloc (); }
+    let mk_info_flag info_flag_desc info_flag_loc =
+      { info_flag_desc; info_flag_loc; }
     ;;
 
-    let mk_qual_identifier qual_identifier_desc =
-      { qual_identifier_desc; qual_identifier_loc = symbol_rloc (); }
-    ;;
-
-    let mk_var_binding var_binding_desc =
-      { var_binding_desc; var_binding_loc = symbol_rloc (); }
-    ;;
-
-    let mk_term term_desc = { term_desc; term_loc = symbol_rloc (); } ;;
-
-    let mk_smt_option smt_option_desc = {
-        smt_option_desc; smt_option_loc = symbol_rloc ();
-      }
-    ;;
-
-    let mk_script script_commands =
-      { script_commands; script_loc = symbol_rloc () }
-    ;;
-
-    let mk_attribute attribute_desc =
-      { attribute_desc; attribute_loc = symbol_rloc (); }
-    ;;
-
-    let mk_attr_value attr_value_desc =
-      { attr_value_desc; attr_value_loc = symbol_rloc (); }
-    ;;
-
-    let mk_info_flag info_flag_desc =
-      { info_flag_desc; info_flag_loc = symbol_rloc (); }
-    ;;
-
-    let mk_symbol symbol_desc = { symbol_desc; symbol_loc = symbol_rloc (); } ;;
+    let mk_symbol symbol_desc symbol_loc = { symbol_desc; symbol_loc; } ;;
 %}
 
 %start script
@@ -142,79 +138,112 @@
 %%
 
 script:
-| commands=delimited(LPAREN,command,RPAREN)*; EOF { mk_script commands }
+| commands=delimited(LPAREN,command,RPAREN)*; EOF 
+  { let loc = mk_loc $startpos $endpos in
+    mk_script commands loc }
 ;
 
 %inline command:
 | ASSERT t=term;
-  { mk_command (CmdAssert t) }
+  { let loc = mk_loc $startpos $endpos in mk_command (CmdAssert t) loc }
 | CHECKSAT
-    { mk_command CmdCheckSat }
+  { let loc = mk_loc $startpos $endpos in mk_command CmdCheckSat loc }
 | DECLARECONST symb=symbol; so=sort;
-  { mk_command (CmdDeclareConst(symb, so)) }
-| DECLAREFUN symb=symbol; polys=option(poly_parameters); LPAREN sorts=sort* RPAREN so=sort;
-  { mk_command (CmdDeclareFun (symb, polys, sorts, so)) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdDeclareConst(symb, so)) loc }
+| DECLAREFUN symb=symbol; polys=option(poly_parameters);
+  LPAREN sorts=sort* RPAREN so=sort;
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdDeclareFun (symb, polys, sorts, so)) loc }
 | DECLARESORT symb=symbol; num=NUMERAL;
-  { mk_command (CmdDeclareSort(symb, num)) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdDeclareSort(symb, num)) loc }
 | DEFINEFUN LPAREN fdef=fun_nonrec_def; RPAREN
- { mk_command (CmdDefineFun fdef) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_command (CmdDefineFun fdef) loc }
 | DEFINEFUNREC LPAREN frdefs=fun_rec_def+; RPAREN
- { mk_command (CmdDefineFunRec frdefs) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_command (CmdDefineFunRec frdefs) loc }
 | DEFINESORT symb=symbol; LPAREN symbs=symbol+ RPAREN so=sort;
-  { mk_command (CmdDefineSort (symb, symbs, so)) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdDefineSort (symb, symbs, so)) loc }
 | ECHO s=STRING;
-  { mk_command (CmdEcho s) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdEcho s) loc }
 | EXIT
-  { mk_command CmdExit }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command CmdExit loc }
 | GETASSERTIONS
-    { mk_command CmdGetAssertions }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdGetAssertions loc }
 | GETASSIGNMENT
-    { mk_command CmdGetAssignment }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdGetAssignment loc }
 | GETINFO iflag=info_flag;
-  { mk_command (CmdGetInfo iflag) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdGetInfo iflag) loc }
 | GETMODEL
-    { mk_command CmdGetModel }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdGetModel loc }
 | GETOPTION kwd=KEYWORD;
-  { mk_command (CmdGetOption kwd) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdGetOption kwd) loc }
 | RESET
-    { mk_command CmdReset }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdReset loc }
 | RESETASSERTIONS
-    { mk_command CmdResetAssertions }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdResetAssertions loc }
 | GETPROOF
-    { mk_command CmdGetProof }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdGetProof loc }
 | GETUNSATCORE
-    { mk_command CmdGetUnsatCore }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdGetUnsatCore loc }
 | GETUNSATASSUMPTIONS
-    { mk_command CmdGetUnsatAssumptions }
+    { let loc = mk_loc $startpos $endpos in
+      mk_command CmdGetUnsatAssumptions loc }
 | GETVALUE LPAREN ts=term+; RPAREN;
-  { mk_command (CmdGetValue ts) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdGetValue ts) loc }
 | METAINFO attr=attribute;
-  { mk_command (CmdMetaInfo attr) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdMetaInfo attr) loc }
 | POP num=option(NUMERAL);
-  { mk_command (CmdPop num) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdPop num) loc }
 | PUSH num=option(NUMERAL);
-  { mk_command (CmdPush num) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdPush num) loc }
 | SETINFO attr=attribute;
-  { mk_command (CmdSetInfo attr) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdSetInfo attr) loc }
 | SETLOGIC symb=symbol;
-  { mk_command (CmdSetLogic symb) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdSetLogic symb) loc }
 | SETOPTION sopt=smt_option;
-  { mk_command (CmdSetOption sopt) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_command (CmdSetOption sopt) loc }
 ;
 
 fun_def:
-| symb=symbol; polys=option(poly_parameters); LPAREN svars=sorted_var*; RPAREN so=sort; t=term;
+| symb=symbol; polys=option(poly_parameters);
+  LPAREN svars=sorted_var*; RPAREN so=sort; t=term;
   { (symb, polys, svars, so, t) }
   ;
 
 fun_nonrec_def:
 | fd=fun_def;
-  { let s, ps, svs, so, t = fd  in mk_fun_def (FunDef (s, ps, svs, so, t)) }
+  { let loc = mk_loc $startpos $endpos in
+    let s, ps, svs, so, t = fd in
+    mk_fun_def (FunDef (s, ps, svs, so, t)) loc }
 ;
 
 fun_rec_def:
 | LPAREN fd=fun_def RPAREN
- { let s, ps, svs, so, t = fd in mk_fun_rec_def (FunRecDef (s, ps, svs, so, t)) }
+ { let s, ps, svs, so, t = fd in
+   let loc = mk_loc $startpos $endpos in
+   mk_fun_rec_def (FunRecDef (s, ps, svs, so, t)) loc }
  ;
 
 poly_parameters:
@@ -223,58 +252,77 @@ poly_parameters:
 
 sorted_var:
 | LPAREN symb=symbol; so=sort; RPAREN
- { mk_sorted_var (SortedVar (symb, so)) }
-  ;
+  { let loc = mk_loc $startpos $endpos in
+    mk_sorted_var (SortedVar (symb, so)) loc }
+;
 
 sort:
-| id=identifier; { mk_sort (SortIdentifier id) }
-| LPAREN id=identifier; sorts=sort+; RPAREN { mk_sort (SortFun (id, sorts)) }
+| id=identifier;
+  { let loc = mk_loc $startpos $endpos in mk_sort (SortIdentifier id) loc }
+| LPAREN id=identifier; sorts=sort+; RPAREN
+  { let loc = mk_loc $startpos $endpos in mk_sort (SortFun (id, sorts)) loc }
 ;
 
 index:
 | NUMERAL { IdxNum $1 }
-| SYMBOL  { IdxSymbol (mk_symbol (SimpleSymbol $1)) }
+| SYMBOL
+  { let loc = mk_loc $startpos $endpos in
+    IdxSymbol (mk_symbol (SimpleSymbol $1) loc) }
 ;
 
 identifier:
-| symb=symbol { mk_identifier (IdSymbol symb) }
+| symb=symbol
+  { let loc = mk_loc $startpos $endpos in mk_identifier (IdSymbol symb) loc }
 | LPAREN UNDERSCORE symb=symbol; indexes=index+; RPAREN
-  { mk_identifier (IdUnderscore (symb, indexes)) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_identifier (IdUnderscore (symb, indexes)) loc }
 ;
 
 symbol:
-| SYMBOL { mk_symbol (SimpleSymbol $1) }
-| QUOTEDSYMBOL { mk_symbol (QuotedSymbol $1) }
+| SYMBOL
+  { let loc = mk_loc $startpos $endpos in mk_symbol (SimpleSymbol $1) loc }
+| QUOTEDSYMBOL
+  { let loc = mk_loc $startpos $endpos in mk_symbol (QuotedSymbol $1) loc }
 ;
 
 term:
 | spec_constant
- { mk_term (TermSpecConstant $1) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermSpecConstant $1) loc }
 | qual_identifier
- { mk_term (TermQualIdentifier $1) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermQualIdentifier $1) loc }
 | LPAREN qualid=qual_identifier; ts=term+; RPAREN
- { mk_term (TermQualIdentifierTerms(qualid, ts)) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermQualIdentifierTerms(qualid, ts)) loc }
 | LPAREN LET LPAREN vbindings=var_binding+; RPAREN t=term; RPAREN
- { mk_term (TermLetTerm (vbindings, t)) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermLetTerm (vbindings, t)) loc }
 | LPAREN FORALL LPAREN svars=sorted_var+; RPAREN t=term; RPAREN
- { mk_term (TermForallTerm (svars, t)) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermForallTerm (svars, t)) loc}
 | LPAREN EXISTS  LPAREN svars=sorted_var+; RPAREN t=term; RPAREN
- { mk_term (TermExistsTerm (svars, t)) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermExistsTerm (svars, t)) loc }
 | LPAREN BANG t=term; attrs=attribute+ RPAREN
- { mk_term (TermAnnotatedTerm(t, attrs)) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_term (TermAnnotatedTerm(t, attrs)) loc }
 ;
 
 qual_identifier:
 | id=identifier;
-  { mk_qual_identifier (QualIdentifierIdentifier id) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_qual_identifier (QualIdentifierIdentifier id) loc }
 | LPAREN AS id=identifier; so=sort; RPAREN
- { mk_qual_identifier (QualIdentifierAs (id, so)) }
-  ;
+  { let loc = mk_loc $startpos $endpos in
+    mk_qual_identifier (QualIdentifierAs (id, so)) loc }
+;
 
 var_binding:
 | LPAREN symb=symbol; t=term; RPAREN
- { mk_var_binding (VarBinding (symb, t)) }
-  ;
+  { let loc = mk_loc $startpos $endpos in
+    mk_var_binding (VarBinding (symb, t)) loc }
+;
 
 spec_constant:
 | BINARY  { CstBinary $1 }
@@ -287,34 +335,48 @@ spec_constant:
 
 attribute_value:
 | sc=spec_constant;
-  { mk_attr_value (AttrValSpecConstant sc) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_attr_value (AttrValSpecConstant sc) loc }
 | symb=symbol;
-  { mk_attr_value (AttrValSymbol symb) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_attr_value (AttrValSymbol symb) loc }
 | LPAREN sexprs=sexpr*; RPAREN
- { mk_attr_value (AttrValSexpr sexprs) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_attr_value (AttrValSexpr sexprs) loc }
 ;
 
 sexpr:
 | sc=spec_constant;
-  { mk_sexpr (SexprConstant sc) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_sexpr (SexprConstant sc) loc }
 | symb=symbol;
-  { mk_sexpr (SexprSymbol symb) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_sexpr (SexprSymbol symb) loc }
 | kwd=KEYWORD;
-  { mk_sexpr (SexprKeyword kwd) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_sexpr (SexprKeyword kwd) loc }
 | LPAREN sexprs=sexpr*; RPAREN
- { mk_sexpr (SexprParens sexprs) }
+ { let loc = mk_loc $startpos $endpos in
+   mk_sexpr (SexprParens sexprs) loc }
 ;
 
 attribute:
 | kwd=KEYWORD;
-  { mk_attribute (AttrKeyword kwd) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_attribute (AttrKeyword kwd) loc }
 | kwd=KEYWORD; attrval=attribute_value;
-  { mk_attribute (AttrKeywordValue (kwd, attrval)) }
+  { let loc = mk_loc $startpos $endpos in
+    mk_attribute (AttrKeywordValue (kwd, attrval)) loc }
 ;
 
 smt_option:
-| attr=attribute { mk_smt_option (OptionAttribute attr) }
+| attr=attribute
+  { let loc = mk_loc $startpos $endpos in
+    mk_smt_option (OptionAttribute attr) loc }
 ;
 
 info_flag:
-| kwd=KEYWORD { mk_info_flag (InfoFlagKeyword kwd) }
+| kwd=KEYWORD
+  { let loc = mk_loc $startpos $endpos in
+    mk_info_flag (InfoFlagKeyword kwd) loc }
+;

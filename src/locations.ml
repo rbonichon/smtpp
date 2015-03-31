@@ -21,6 +21,8 @@ type t = {
 }
 ;;
 
+let mk_loc loc_start loc_end = { loc_start; loc_end; } ;;
+
 let in_file name =
   let loc = {
     Lexing.pos_fname = name;
