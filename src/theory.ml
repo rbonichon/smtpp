@@ -66,7 +66,7 @@ module SMTInt = struct
       let intint_bool_fun = xx_y_fun int_sort bool_sort in
       let intint_int_fun = xx_y_fun int_sort int_sort in
       let int_int_fun = x_y_fun int_sort int_sort in
-      let arith_op = [("-", Descriptive);
+      let arith_op = [("-", Difference);
                       ("*", Linear);
                       ("+", Linear);
                       ("div", NonLinear);
@@ -80,7 +80,7 @@ module SMTInt = struct
       List.fold_left
         (fun m (name, kind) -> StringMap.add name kind m)
         (List.fold_left
-           (fun m name -> StringMap.add name Descriptive m) StringMap.empty
+           (fun m name -> StringMap.add name Difference m) StringMap.empty
            comp_op) arith_op
     ;;
 
@@ -95,7 +95,7 @@ module SMTReal = struct
       let realreal_bool_fun = xx_y_fun real_sort bool_sort in
       let realreal_real_fun = xx_y_fun real_sort real_sort in
       let real_real_fun = x_y_fun real_sort real_sort in
-      let arith_op = [("-", Descriptive);
+      let arith_op = [("-", Difference);
                       ("*", Linear);
                       ("+", Linear);
                       ("/", NonLinear);
@@ -108,7 +108,7 @@ module SMTReal = struct
       List.fold_left
         (fun m (name, kind) -> StringMap.add name kind m)
         (List.fold_left
-           (fun m name -> StringMap.add name Descriptive m) StringMap.empty
+           (fun m name -> StringMap.add name Difference m) StringMap.empty
            comp_op) arith_op
     ;;
 

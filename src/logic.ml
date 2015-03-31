@@ -1,10 +1,21 @@
 open Format ;;
 
 type arith_sort = Integer | Real | Mixed ;;
-type arith_kind = Descriptive | Linear | NonLinear ;;
+type arith_kind = Difference | Linear | NonLinear ;;
 (* Kind of arithmetics used in SMT-LIB benchmarks.
    They form a simple lattice.
 *)
+
+let arith_kind_compare (k1 : arith_kind) (k2 : arith_kind) =
+  match k1, k2 with
+  | Difference, Difference
+  | Linear, Linear
+  | NonLinear, NonLinear -> 0
+  | NonLinear, (Difference | Linear) -> 1
+  | (Difference | Linear), NonLinear -> -1
+  | Linear, Difference -> 1
+  | Difference, Linear -> -1
+;;
 
 type t = {
     smt_name : string;
@@ -84,14 +95,14 @@ let parse_logic (smt_logic : string) =
        logic.arithmetic_sort <- Some Integer ;
        assert(!idx + 2 <= lidx  &&
                 smt_logic.[!idx + 1] = 'D' && smt_logic.[!idx + 2] = 'L');
-       logic.arithmetic_kind <- Some Descriptive;
+       logic.arithmetic_kind <- Some Difference;
        idx := !idx + 3;
     | 'R' ->
        (* When occurring here, "DL" is appended *)
        logic.arithmetic_sort <- Some Real ;
        assert(!idx + 2 <= lidx  &&
                 smt_logic.[!idx + 1] = 'D' && smt_logic.[!idx + 2] = 'L');
-       logic.arithmetic_kind <- Some Descriptive;
+       logic.arithmetic_kind <- Some Difference;
        idx := !idx + 3;
     | _ -> assert false
   done;
@@ -144,7 +155,7 @@ let pp_arithmetic fmt (logic : t) =
        );
        fprintf fmt "A";
      end
-  | Some Descriptive ->
+  | Some Difference ->
      begin
        (match logic.arithmetic_sort with
         | None | Some Mixed -> assert false
