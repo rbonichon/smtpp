@@ -236,7 +236,8 @@ module UF = struct
 
     let check_command cmd =
       match cmd.command_desc with
-        | CmdDeclareFun _
+        | CmdDeclareFun (_, _, sorts, _) ->
+           if List.length sorts > 0 then raise FoundUF
         | CmdDefineFun _
         | CmdDefineFunRec _ -> raise FoundUF;
         | _ -> ()

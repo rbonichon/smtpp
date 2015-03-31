@@ -69,8 +69,8 @@ module SMTInt = struct
       let arith_op = [("-", Descriptive);
                       ("*", Linear);
                       ("+", Linear);
-                      ("div", Linear);
-                      ("mod", Linear);
+                      ("div", NonLinear);
+                      ("mod", NonLinear);
                      ] in
       let comp_op = ["<="; "<"; ">="; ">";] in
       (["-"  , int_int_fun; "abs", int_int_fun; ]
@@ -98,7 +98,7 @@ module SMTReal = struct
       let arith_op = [("-", Descriptive);
                       ("*", Linear);
                       ("+", Linear);
-                      ("/", Linear);
+                      ("/", NonLinear);
                      ] in
       let comp_op = ["<="; "<"; ">="; ">";] in
       ("-"  , real_real_fun) ::

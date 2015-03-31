@@ -12,14 +12,23 @@ open Utils
 
 type varstate = {
     used : SymbolSet.t ;
-    defined : SymbolSet.t
+    user_defined : SymbolSet.t;
+    theory_defined : SymbolSet.t;
   }
 ;;
 
-let empty_vstate = { used = SymbolSet.empty; defined = SymbolSet.empty; } ;;
+let empty_vstate = {
+    used = SymbolSet.empty;
+    user_defined = SymbolSet.empty;
+    theory_defined = SymbolSet.empty;
+} ;;
+
+let all_defined (vs : varstate) =
+  SymbolSet.union vs.user_defined vs.theory_defined
+;;
 
 let define vs sy =
-  { vs with defined = SymbolSet.add sy vs.defined; }
+  { vs with user_defined = SymbolSet.add sy vs.user_defined; }
 ;;
 
 let use vs sy =
@@ -63,11 +72,13 @@ let rec eval_term (vs: varstate) (t: Ast.term) =
      eval_qual_identifier (eval_terms vs terms) qid
   | TermLetTerm (vbindings, term) ->
      let vsbindings = List.fold_left eval_var_binding empty_vstate vbindings in
-     let vs' = { defined = SymbolSet.union vsbindings.defined vs.defined;
+     let vs' = { vs with
+                 user_defined =
+                   SymbolSet.union vsbindings.user_defined vs.user_defined;
                  used = SymbolSet.empty; } in
      let vsterm = eval_term vs' term in
-     let outside_used = SymbolSet.diff vsterm.used vsbindings.defined in
-     let unused_bindings = SymbolSet.diff vsbindings.defined vsterm.used in
+     let outside_used = SymbolSet.diff vsterm.used (all_defined vsbindings) in
+     let unused_bindings = SymbolSet.diff vsbindings.user_defined vsterm.used in
      if unused_bindings <> SymbolSet.empty then
        Format.printf
          "@[<v 0>Unused bounded variables: @[<hov 0>%a@]@]@."
@@ -76,8 +87,8 @@ let rec eval_term (vs: varstate) (t: Ast.term) =
   | TermForallTerm (svars, term)
   | TermExistsTerm (svars, term) ->
      let new_symbols = svar_set svars in
-     let defined = SymbolSet.union new_symbols vs.defined in
-     let vsterm = eval_term { empty_vstate with defined; } term in
+     let user_defined = SymbolSet.union new_symbols vs.user_defined in
+     let vsterm = eval_term { empty_vstate with user_defined; } term in
      let outside_used = SymbolSet.diff vsterm.used new_symbols in
      { vs with used = SymbolSet.union outside_used vs.used; }
   | TermAnnotatedTerm (term, _) -> eval_term vs term
@@ -94,9 +105,10 @@ let eval_fundef (vs : varstate) (f : Ast.fun_def) =
   match f.fun_def_desc with
   | FunDef (sy, _, svars, _, term) ->
      let new_symbols = svar_set svars in
-     let fdefined = SymbolSet.union vs.defined new_symbols in
+     let fdefined = SymbolSet.union vs.user_defined new_symbols in
      let vs' =
-       eval_term { defined = fdefined; used = SymbolSet.empty; } term in
+       eval_term
+         { vs with user_defined = fdefined; used = SymbolSet.empty; } term in
      let unused_params = SymbolSet.diff fdefined vs'.used in
      if unused_params <> SymbolSet.empty then
        Format.printf
@@ -145,15 +157,17 @@ let eval_commands vs cmds =
 ;;
 
 let apply (script: Extended_ast.script) =
-  let defined =
+  let theory_defined =
     List.fold_left
       (fun s (name, _) -> SymbolSet.add (Ast_utils.mk_symbol name) s)
       SymbolSet.empty script.script_theory.theory_symbols
   in
-  let vstate = { used = SymbolSet.empty; defined } in
+  let vstate = { empty_vstate with theory_defined; } in
   let vs = eval_commands vstate script.script_commands in
-  let unused = SymbolSet.diff vs.defined vs.used in
-  let undefined = SymbolSet.diff vs.used vs.defined in
+  let unused = SymbolSet.diff vs.user_defined vs.used in
+  let undefined =
+    SymbolSet.diff vs.used (SymbolSet.union vs.user_defined vs.theory_defined)
+  in
   let pp_set (title : string) (s : SymbolSet.t) =
     if s <> SymbolSet.empty then
       Format.printf
