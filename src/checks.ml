@@ -377,17 +377,21 @@ module ArithmeticCheck = struct
                 | False -> Maybe
                 | Maybe | True -> r.has_real in
               let kind =
-                try Some (StringMap.find sname kmap) with Not_found -> r.kind in
+                try Logic.max_kind_opt (Some (StringMap.find sname kmap)) r.kind
+                with Not_found -> r.kind
+              in
               { has_int; has_real; kind; }
            | true, false ->
               Io.debug "Int detected at %a@." Pp.pp_symbol symb;
               let kind =
-                try Some (StringMap.find sname kmap) with Not_found -> r.kind in
+                try Logic.max_kind_opt (Some (StringMap.find sname kmap)) r.kind
+                with Not_found -> r.kind in
               { r with has_int = True; kind; }
            | false, true ->
               Io.debug "Real detected at %a@." Pp.pp_symbol symb;
               let kind =
-                try Some (StringMap.find sname kmap) with Not_found -> r.kind in
+                try Logic.max_kind_opt (Some (StringMap.find sname kmap)) r.kind
+                with Not_found -> r.kind in
               { r with has_real = True; kind; }
            | false, false -> r
          end

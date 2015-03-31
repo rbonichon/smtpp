@@ -6,7 +6,7 @@ type arith_kind = Difference | Linear | NonLinear ;;
    They form a simple lattice.
 *)
 
-let arith_kind_compare (k1 : arith_kind) (k2 : arith_kind) =
+let arith_kind_compare (k1 : arith_kind) (k2 : arith_kind) : int =
   match k1, k2 with
   | Difference, Difference
   | Linear, Linear
@@ -16,6 +16,27 @@ let arith_kind_compare (k1 : arith_kind) (k2 : arith_kind) =
   | Linear, Difference -> 1
   | Difference, Linear -> -1
 ;;
+
+let max_kind_opt (k1 : arith_kind option) (k2 : arith_kind option)
+    : arith_kind option =
+  match k1, k2 with
+  | Some _, None -> k1
+  | None, Some _ -> k2
+  | Some x, Some y -> if arith_kind_compare x y > 0 then k1 else k2
+  | None, None -> None
+;;
+
+let arith_sort_compare (s1 : arith_sort) (s2 : arith_sort) : int =
+  match s1, s2 with
+  | Real, Real
+  | Integer, Integer
+  | Mixed, Mixed -> 0
+  | Mixed, (Real | Integer) -> 2
+  | (Real | Integer), Mixed -> -2
+  | Real, Integer -> 1
+  | Integer, Real -> -1
+;;
+
 
 type t = {
     smt_name : string;
