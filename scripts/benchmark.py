@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 import shutil
+import operator
 
 # Main starts here
 parser = argparse.ArgumentParser("Comparing SMT tools")
@@ -145,9 +146,9 @@ class Bench(object):
             f.write("{0} = {1}\n".format(k, n))
 
     def bench2list(self):
-        l = [ (k, v) for (k, v) in self.results.items() ]
-        l.sort()
-        return l
+        #l = [ (k, v) for (k, v) in self.results.items() ]
+        #l.sort()
+        return sorted(self.results.items(), key=operator.itemgetter(0))
 
     def timings(self):
         return [ v["time"] for (_, v) in self.bench2list() ]
@@ -187,8 +188,9 @@ class Stat(object):
         self.ko_wins = 0
         self.windiff_sum = 0
         self.windiff_max = None
+        self.max_name = None
 
-    def win(self, diff):
+    def win(self, diff, bname):
         if diff == -1:
             self.kowins += 1
         else:
@@ -196,31 +198,35 @@ class Stat(object):
             self.windiff_sum += diff
             if self.windiff_max is None or diff > self.windiff_max:
                 self.windiff_max = diff
+                self.max_name = bname
 
     def pp(self, f):
         f.write("# {}\n".format(self.title))
         twins = self.wins + self.ko_wins
         f.write("Wins : {} / {}\n".format(twins, self.total ))
         f.write("KO : {}\n".format(self.ko_wins))
-        f.write("Avg win : {0:.4f}\n".format(self.windiff_sum / self.wins if self.wins > 0 else 0))
-        f.write("Max.win : {}\n\n".format(self.windiff_max))
+        f.write("Avg win : {0:.4f} \n".format(
+            self.windiff_sum / self.wins if self.wins > 0 else 0
+        ))
+        f.write("Max.win : {} ({})\n\n".format(
+            self.windiff_max,
+            self.max_name
+        ))
         return
 
 class BenchCompare(object):
     """ Object to compare two benchmarks done on the same bench list """
-    def __init__(self, pickle1, pickle2):
-        self.bench1 = Bench(dummy_tool ())
-        self.bench1.load_pickle(pickle1)
-        self.bench2 = Bench(dummy_tool ())
-        self.bench2.load_pickle(pickle2)
+    def __init__(self, b1, b2):
+        self.bench1 = b1
+        self.bench2 = b2
+        logging.debug("Ready to compare {} and {}".format(self.bench1.toolname,
+                                                   self.bench2.toolname))
 
     def compare_benches(self):
         "Compute comparison stats with another bench"
         l1 = self.bench1.bench2list()
         l2 = self.bench2.bench2list()
         l = len(l1)
-        logging.debug("Comparing {} and {}".format(self.bench1.toolname,
-                                                   self.bench2.toolname))
         s1 = Stat(self.bench1.toolname, self.bench2.toolname, l)
         s2 = Stat(self.bench2.toolname, self.bench1.toolname, l)
 
@@ -230,18 +236,19 @@ class BenchCompare(object):
             if k1 != k2:
                 logging.info("Bench {} is not bench {}".format(k1, k2))
                 return
+            name = k1
             if b1["ret"] >= 0:
                 if b2["ret"] < 0:
                     s1.win(-1)
                 elif b2["time"] > b1["time"]:
-                    s1.win(b2["time"] - b1["time"])
+                    s1.win(b2["time"] - b1["time"], name)
                 elif b2["time"] < b1["time"]:
-                    s2.win(b1["time"] - b2["time"])
+                    s2.win(b1["time"] - b2["time"], name)
                 else:
                     logging.debug("Nobody wins {}: same time".format(k1))
             else:
                 if b2["ret"] >= 0:
-                    s2.win(-1)
+                    s2.win(-1, name)
                 else:
                     logging.debug("Nobody wins {}: both errors".format(k1))
 
@@ -254,7 +261,7 @@ class BenchCompare(object):
 def mk_bench(toolbench, benchfiles):
     """ Launch the benchmark for a given tool with provided command """
     n = len(benchfiles)
-    for i, bf in enumerate(benchfiles):
+    for i, bf in enumerate(benchfiles, start = 1):
         logging.debug("{1} / {2} : {0} {3}".format(toolbench.toolname, i, n, bf))
         toolbench.run(bf)
     toolbench.dump()
@@ -276,8 +283,13 @@ if args.pickledir is not None:
         for f in fnames:
             if re.match(re.compile("\S+.pickle"),f):
                 pickles.insert(0, os.path.join(dirpath, f))
-    for i, p in enumerate(pickles, start=1):
-        for p2 in pickles[i:]:
+    benches = []
+    for p in pickles:
+        b = Bench(dummy_tool ())
+        b.load_pickle(p)
+        benches.insert(0, b)
+    for i, p in enumerate(benches, start=1):
+        for p2 in benches[i:]:
                 bc = BenchCompare(p, p2)
                 bc.compare_benches()
 else:
