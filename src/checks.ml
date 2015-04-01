@@ -498,6 +498,8 @@ module ArithmeticCheck = struct
 
     let arithmetic s =
       match check_script s with
+      | { has_int = True; has_real = True; kind = Some Difference; }
+        -> Some Mixed, Some Linear (* RIDL does not exists. Upgrade it *)
       | { has_int = True; has_real = True; kind } -> (Some Mixed), kind
       | { has_int = True; has_real = _; kind } -> (Some Integer), kind
       | { has_int = _; has_real = True; kind } -> (Some Real), kind

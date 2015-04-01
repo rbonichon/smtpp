@@ -179,7 +179,8 @@ let pp_arithmetic fmt (logic : t) =
   | Some Difference ->
      begin
        (match logic.arithmetic_sort with
-        | None | Some Mixed -> assert false
+        | None -> assert false
+        | Some Mixed -> fprintf fmt "IR (?)"
         | Some Integer -> fprintf fmt "I"
         | Some Real -> fprintf fmt "R"
        );

@@ -67,7 +67,7 @@ module SMTInt = struct
       let intint_int_fun = xx_y_fun int_sort int_sort in
       let int_int_fun = x_y_fun int_sort int_sort in
       let arith_op = [("-", Difference);
-                      ("*", Linear);
+                      ("*", NonLinear);
                       ("+", Linear);
                       ("div", NonLinear);
                       ("mod", NonLinear);
@@ -96,7 +96,7 @@ module SMTReal = struct
       let realreal_real_fun = xx_y_fun real_sort real_sort in
       let real_real_fun = x_y_fun real_sort real_sort in
       let arith_op = [("-", Difference);
-                      ("*", Linear);
+                      ("*", NonLinear);
                       ("+", Linear);
                       ("/", NonLinear);
                      ] in
