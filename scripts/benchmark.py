@@ -309,7 +309,7 @@ else:
                 if is_smt2_file(f):
                     benchfiles.insert(0, os.path.join(dirpath,f))
 
-    logging.info("Added {} benchmarks".format(len(benchfiles)))
+    logging.debucalsg("Added {} benchmarks".format(len(benchfiles)))
 
     def mk_toolbench(tool):
         try:
