@@ -25,12 +25,17 @@ parser.add_argument("-f", "--file", dest = "configfile",
                     default=".benchmark.ini",
                     help = " use config file")
 parser.add_argument("-pd", "--pickle-dir", dest = "pickledir",
-                    default=None,
+                    default=".",
+                    help = " save/load directory for pickles")
+parser.add_argument("-ld", "--load-dir", dest = "load",
+                    action="store_true",
+                    default=False,
                     help = " load pickles located at directory")
 parser.add_argument("-t", "--timeout", dest = "timeout",
                     default=None,
                     help = " timeout for tools")
 parser.add_argument("-g", "--graph", dest = "graph", default=False,
+                    action="store_true",
                     help = " enables graph production")
 
 args = parser.parse_args()
@@ -105,7 +110,7 @@ class Bench(object):
 
     def pfile(self):
         fname = self.toolname.replace(" ", "_")
-        return "{}.pickle".format(fname)
+        return os.path.join(args.pickledir, "{}.pickle".format(fname))
 
     def dump(self):
         pickle.dump(self, open(self.pfile(), "wb"))
@@ -181,13 +186,12 @@ class Bench(object):
 
 
 class Stat(object):
-    def __init__(self, n1, n2, total):
-        self.title = "{} vs {}".format(n1, n2)
+    def __init__(self, total):
         self.wins = 0
         self.total = total
         self.ko_wins = 0
         self.windiff_sum = 0
-        self.windiff_max = None
+        self.windiff_max = 0
         self.max_name = None
 
     def win(self, diff, bname):
@@ -196,12 +200,17 @@ class Stat(object):
         else:
             self.wins += 1
             self.windiff_sum += diff
-            if self.windiff_max is None or diff > self.windiff_max:
+            if diff > self.windiff_max:
                 self.windiff_max = diff
                 self.max_name = bname
 
+    def avg_win(self):
+        return self.windiff_sum / self.wins if self.wins > 0 else 0
+
+    def all_wins(self):
+        return self.wins + self.ko_wins
+
     def pp(self, f):
-        f.write("# {}\n".format(self.title))
         twins = self.wins + self.ko_wins
         f.write("Wins : {} / {}\n".format(twins, self.total ))
         f.write("KO : {}\n".format(self.ko_wins))
@@ -214,6 +223,92 @@ class Stat(object):
         ))
         return
 
+class StatMatch(object):
+    def __init__(self, n1, n2, mlen):
+        self.home = n1
+        self.away = n2
+        self.draws = 0
+        self.total = mlen
+        self.stats = dict()
+        self.stats[n1] = Stat(mlen)
+        self.stats[n2] = Stat(mlen)
+
+    def register(self, home_bench, away_bench, name):
+        if home_bench["ret"] >= 0:
+            if away_bench["ret"] < 0:
+                self.stats[self.home].win(-1, name)
+            else:
+                diff = abs(home_bench["time"] - away_bench["time"])
+                if diff == 0:
+                    self.draws += 1
+                elif away_bench["time"] > home_bench["time"]:
+                    self.stats[self.home].win(diff, name)
+                else:
+                    self.stats[self.away].win(diff, name)
+        else:
+            if away_bench["ret"] >= 0:
+                self.stats[self.away].win(-1, name)
+            else:
+                self.draws += 1
+
+    def winner(self):
+        w1 = self.stats[self.home].all_wins ()
+        w2 = self.stats[self.away].all_wins ()
+        if w1 > w2:
+            return self.home
+        elif w2 > w1: return self.away
+        else : return None
+
+    def pp(self, f):
+        f.write("# {} vs {} : {}\n".format(self.home, self.away, self.total))
+        f.write("W/D/L: {} / {} / {}\n".format(self.stats[self.home].all_wins (),
+                                             self.draws,
+                                             self.stats[self.away].all_wins ()))
+        f.write("Avg win: {}\n".format(self.stats[self.home].avg_win ()))
+        f.write("Avg loss: {}\n".format(self.stats[self.away].avg_win ()))
+        f.write("Best win: {0:.4f} ({1})\n".format(
+            self.stats[self.home].windiff_max,
+            self.stats[self.home].max_name))
+        f.write("Worst loss: {0:.4f} ({1})\n".format(
+            self.stats[self.away].windiff_max,
+            self.stats[self.away].max_name))
+
+        f.write("\n")
+
+class Table():
+    def __init__(self):
+        self.ranks = dict()
+
+    def add_score(self, name, v):
+        if name in self.ranks:
+            self.ranks[name] += v
+        else:
+            self.ranks[name] = v
+
+    def register(self, statmatch):
+        wname = statmatch.winner ()
+        logging.debug("Winner between {} and {} is {}".format(
+            statmatch.home,
+            statmatch.away,
+            wname))
+        if wname is None:
+            self.add_score(statmatch.home, 1)
+            self.add_score(statmatch.away, 1)
+        elif wname == statmatch.home:
+            self.add_score(statmatch.home, 2)
+            self.add_score(statmatch.away, 0)
+        else:
+            self.add_score(statmatch.home, 0)
+            self.add_score(statmatch.away, 2)
+
+    def pp(self, f):
+        c = sorted(self.ranks.items(), key=operator.itemgetter(1))
+        c.reverse()
+        f.write("# Final standings\n")
+        for i, (name, points) in enumerate(c, start = 1):
+            f.write("{}. {:35s} : {}\n".format(i, name, points))
+        f.write("\n")
+
 class BenchCompare(object):
     """ Object to compare two benchmarks done on the same bench list """
     def __init__(self, b1, b2):
@@ -222,13 +317,12 @@ class BenchCompare(object):
         logging.debug("Ready to compare {} and {}".format(self.bench1.toolname,
                                                    self.bench2.toolname))
 
-    def compare_benches(self):
+    def compare_benches(self, standings=None):
         "Compute comparison stats with another bench"
         l1 = self.bench1.bench2list()
         l2 = self.bench2.bench2list()
         l = len(l1)
-        s1 = Stat(self.bench1.toolname, self.bench2.toolname, l)
-        s2 = Stat(self.bench2.toolname, self.bench1.toolname, l)
+        sm = StatMatch(self.bench1.toolname, self.bench2.toolname, l)
 
         def comp(x, y):
             k1, b1 = x
@@ -236,27 +330,16 @@ class BenchCompare(object):
             if k1 != k2:
                 logging.info("Bench {} is not bench {}".format(k1, k2))
                 return
-            name = k1
-            if b1["ret"] >= 0:
-                if b2["ret"] < 0:
-                    s1.win(-1)
-                elif b2["time"] > b1["time"]:
-                    s1.win(b2["time"] - b1["time"], name)
-                elif b2["time"] < b1["time"]:
-                    s2.win(b1["time"] - b2["time"], name)
-                else:
-                    logging.debug("Nobody wins {}: same time".format(k1))
-            else:
-                if b2["ret"] >= 0:
-                    s2.win(-1, name)
-                else:
-                    logging.debug("Nobody wins {}: both errors".format(k1))
+            sm.register(b1, b2, k1)
 
         for x, y in zip(l1, l2):
             comp(x, y)
-        s1.pp(sys.stdout)
-        s2.pp(sys.stdout)
+        sm.pp(sys.stdout)
+        if standings is not None:
+            standings.register(sm)
         return
+
+
 
 def mk_bench(toolbench, benchfiles):
     """ Launch the benchmark for a given tool with provided command """
@@ -266,8 +349,7 @@ def mk_bench(toolbench, benchfiles):
         toolbench.run(bf)
     toolbench.dump()
     toolbench.pp_summary(sys.stdout)
-    benchmarks.insert(0, toolbench) # save it as a benchmark
-    return
+    return toolbench
 
 smt2file = re.compile("\S+.smt2")
 def is_smt2_file(f):
@@ -276,8 +358,12 @@ def is_smt2_file(f):
     else:
         return False
 
+# Main starts here
 
-if args.pickledir is not None:
+if not os.path.exists(args.pickledir):
+    os.makedirs(args.pickledir)
+
+if args.load:
     pickles = []
     for (dirpath, _, fnames) in os.walk(args.pickledir):
         for f in fnames:
@@ -288,20 +374,20 @@ if args.pickledir is not None:
         b = Bench(dummy_tool ())
         b.load_pickle(p)
         benches.insert(0, b)
+    standings = Table()
     for i, p in enumerate(benches, start=1):
         for p2 in benches[i:]:
                 bc = BenchCompare(p, p2)
-                bc.compare_benches()
+                bc.compare_benches(standings=standings)
+    standings.pp(sys.stdout)
+
 else:
     # Reads configuration file
     config = configparser.ConfigParser(strict = True) # allow duplicate sections
     config.read(args.configfile)
 
-    # A list of Bench objects to be handled for later analysis
-    benchmarks = []
     # The list of files to be benchmarked
     benchfiles = []
-
     for dtitle, dname in config['bench_directories'].items():
         logging.debug("Adding " + dname)
         for (dirpath, _, filenames) in os.walk(dname):
@@ -309,7 +395,7 @@ else:
                 if is_smt2_file(f):
                     benchfiles.insert(0, os.path.join(dirpath,f))
 
-    logging.debucalsg("Added {} benchmarks".format(len(benchfiles)))
+    logging.debug("Added {} benchmarks".format(len(benchfiles)))
 
     def mk_toolbench(tool):
         try:
@@ -331,38 +417,39 @@ else:
             logging.info("Tool description for {} not found".format(toolname))
 
         # do the benchmark
-    for tool in tools:
-        mk_bench(tool, benchfiles)
 
-    if args.graph:
-        plt.style.use('ggplot')
-        comb = itertools.combinations(benchmarks, 2)
-        #logging.debug("{0} combinations found".format(len(comb)))
-        for b1, b2 in comb:
-            b1.plot(b2)
+    benches = [ mk_bench(t, benchfiles) for t in tools ]
 
-        fig = plt.figure()
-        plt.title("Time comparison")
-        plt.margins(y=0.1)
-        plt.ylabel("Time(s)")
-        plt.xlabel('SMT-LIB benchmark')
-        #plt.xticks(range(len(benchfiles)), benchmarks[0].benchnames(), rotation=90)
 
-        for b in benchmarks:
-            logging.debug("Adding line for {}".format(b.toolname))
-            timings = b.timings()
-            plt.plot(timings, label=b.toolname)
+if args.graph:
+    plt.style.use('ggplot')
+    comb = itertools.combinations(benches, 2)
+    #logging.debug("{0} combinations found".format(len(comb)))
+    for b1, b2 in comb:
+        b1.plot(b2)
 
-        #plt.legend(bbox_to_anchor=(1.1, 1), loc=2)
-        plt.legend(loc='upper left')
-        N = 10
-        params = plt.gcf()
-        plSize = params.get_size_inches()
-        #params.set_size_inches( (plSize[0]*N, plSize[1]*N) )
+    fig = plt.figure()
+    plt.title("Time comparison")
+    plt.margins(y=0.1)
+    plt.ylabel("Time(s)")
+    plt.xlabel('SMT-LIB benchmark')
+    #plt.xticks(range(len(benchfiles)), benchmarks[0].benchnames(), rotation=90)
 
-        fig.tight_layout()
-        fname = "tools.pdf"
-        logging.debug("Writing {}".format(fname))
-        plt.savefig(fname)
+    for b in benches:
+        logging.debug("Adding line for {}".format(b.toolname))
+        timings = b.timings()
+        plt.plot(timings, label=b.toolname)
+
+    #plt.legend(bbox_to_anchor=(1.1, 1), loc=2)
+    plt.legend(loc='upper left')
+    N = 10
+    params = plt.gcf()
+    plSize = params.get_size_inches()
+    #params.set_size_inches( (plSize[0]*N, plSize[1]*N) )
+
+    fig.tight_layout()
+    fname = "tools.pdf"
+    logging.debug("Writing {}".format(fname))
+    plt.savefig(fname)
 
 # ends here
