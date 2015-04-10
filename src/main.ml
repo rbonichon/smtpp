@@ -45,6 +45,8 @@ let rec argspec =
   " prints version number";
   "-detect-logic", Arg.Unit (fun () -> Config.set_detect true),
   " infer the logic used by SMT-LIB script (alpha)";
+  "-undef-unused", Arg.Unit (fun () -> Config.set_unused true),
+  " infer the logic used by SMT-LIB script (alpha)";
 ]
 
 and print_usage () =

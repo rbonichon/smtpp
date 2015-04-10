@@ -16,7 +16,6 @@ module Combine(C1: Check)(C2 : Check) : Check = struct
     let check_command cmd = C2.check_command (C1.check_command cmd);;
 end
 
-
 module Array = struct
     exception FoundArray ;;
     open Theory ;;
@@ -398,7 +397,6 @@ module ArithmeticCheck = struct
       | QuotedSymbol _ -> r
     ;;
 
-
     let check_identifier (r : result) id =
       match id.id_desc with
       | IdSymbol sy -> check_symbol r sy
@@ -499,11 +497,13 @@ module ArithmeticCheck = struct
     let arithmetic s =
       match check_script s with
       | { has_int = True; has_real = True; kind = Some Difference; }
-        -> Some Mixed, Some Linear (* RIDL does not exists. Upgrade it *)
+        -> Some Mixed, Some Linear (* RIDL does not exists. Upgrade it to LIRA *)
       | { has_int = True; has_real = True; kind } -> (Some Mixed), kind
-      | { has_int = True; has_real = _; kind } -> (Some Integer), kind
-      | { has_int = _; has_real = True; kind } -> (Some Real), kind
-      | { has_int = False; has_real = False; kind } -> None, kind
+      | { has_int = True; has_real = (Maybe | False) ; kind } ->
+         (Some Integer), kind
+      | { has_int = (Maybe | False); has_real = True; kind } ->
+         (Some Real), kind
+      | { has_int = False; has_real = False; _ } -> None, None
       | _ -> assert false
     ;;
 end

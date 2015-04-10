@@ -65,7 +65,6 @@ let free_variables (sort : t) =
   in aux sort
 ;;
 
-
 let mk_var =
   let basename = "V" in
   let num = ref (-1) in
@@ -88,7 +87,7 @@ let compute_arity (sort : t) =
     | App (sort, l) -> aux (applied + List.length l) sort
     | Fun (l, _) -> List.length l - applied
     | Var _ -> 0
-    | Poly (_, sort) -> aux applied sort
+   | Poly (_, sort) -> aux applied sort
   in aux 0 sort
 ;;
 

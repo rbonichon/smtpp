@@ -86,7 +86,7 @@ Normalizing the formulas to be treated is a task that SMT-solver needs to
 
 * Theories
 
-** TODO Core
+** Core
 #+begin_src lisp
 (theory Core
 

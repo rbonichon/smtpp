@@ -89,8 +89,6 @@ let log txt = glog (get_tagging ()) log_output txt ;;
 
 let warn _loc msg =  warning "%s" msg ;;
 
-
-
 module Error = struct
 exception Lex_error of string;;
 

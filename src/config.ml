@@ -45,6 +45,8 @@ let set_obfuscate, get_obfuscate = genr_bool_switch () ;;
 
 let set_detect, get_detect = genr_bool_switch () ;;
 
+let set_unused, get_unused = genr_bool_switch () ;;
+
 let set_keep_symbols, get_keep_symbols =
   let ks = ref [] in
   (fun (s:string) ->
@@ -53,7 +55,7 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
-let version = "0d25edb65caca167a070c389c2bb0a651d731699 (2015-04-01 16:37:16 -0300)" ;;
+let version = "bd5db04a89d349022f40e4a1537ce1b0dfde256c (2015-04-02 17:25:54 -0300)" ;;
 
 let pp_version () =
   Format.printf "%s@." version

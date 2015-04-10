@@ -35,7 +35,6 @@ module EmptyTheory = struct
     let theory = { theory_symbols = []; theory_sorts = []; } ;;
 end
 
-
 module SMTCore = struct
     let sorts = [ bool_sort; ] ;;
 
@@ -58,62 +57,75 @@ module SMTCore = struct
     let theory = mk_theory sorts symbols ;;
 end
 
-module SMTInt = struct
-    open Logic ;;
-    let sorts = [ int_sort; ] ;;
+module type Arithmetics = sig
+    val base_sort : Sorts.t ;;
+    val local_binary_arith_ops : (string * Logic.arith_kind) list ;;
+    val local_unary_arith_ops : string list ;;
+end
 
-    let symbols, kind_map =
-      let intint_bool_fun = xx_y_fun int_sort bool_sort in
-      let intint_int_fun = xx_y_fun int_sort int_sort in
-      let int_int_fun = x_y_fun int_sort int_sort in
-      let arith_op = [("-", Difference);
-                      ("*", NonLinear);
-                      ("+", Linear);
-                      ("div", NonLinear);
-                      ("mod", NonLinear);
-                     ] in
-      let comp_op = ["<="; "<"; ">="; ">";] in
-      (["-"  , int_int_fun; "abs", int_int_fun; ]
-       @ List.map (fun (e, _) -> (e, intint_int_fun)) arith_op
-       @ List.map (fun e -> (e, intint_bool_fun)) comp_op)
-      ,
+module SharedArithmetics (A : Arithmetics) = struct
+    open Logic ;;
+    open Ast ;;
+    let sorts = [ A.base_sort; ] ;;
+
+    let tt_bool_fun = xx_y_fun A.base_sort bool_sort ;;
+    let tt_t_fun = xx_y_fun A.base_sort A.base_sort ;;
+    let t_t_fun = x_y_fun A.base_sort A.base_sort ;;
+
+    (* Common symbols for real or integer arithmetic *)
+    let binary_arith_ops =
+      [("-", Difference);
+       ("*", NonLinear);
+       ("+", Linear);
+      ]
+      @ A.local_binary_arith_ops
+    ;;
+
+    let unary_arith_ops = "-" :: A.local_unary_arith_ops ;;
+
+    let relations = ["<="; "<"; ">="; ">";] ;;
+
+    let typed_symbols =
+      List.map (fun e -> (e, t_t_fun)) unary_arith_ops
+      @ List.map (fun (e, _) -> (e, tt_t_fun)) binary_arith_ops
+      @ List.map (fun e -> (e, tt_bool_fun)) relations
+    ;;
+
+    let kind_map : Logic.arith_kind StringMap.t =
       List.fold_left
         (fun m (name, kind) -> StringMap.add name kind m)
         (List.fold_left
-           (fun m name -> StringMap.add name Difference m) StringMap.empty
-           comp_op) arith_op
+           (fun m name -> StringMap.add name Difference m)
+           StringMap.empty relations)
+        binary_arith_ops
     ;;
 
-   let theory = mk_theory sorts symbols ;;
-end
-
-module SMTReal = struct
-    open Logic ;;
-    let sorts = [ real_sort; ] ;;
-
-    let symbols, kind_map =
-      let realreal_bool_fun = xx_y_fun real_sort bool_sort in
-      let realreal_real_fun = xx_y_fun real_sort real_sort in
-      let real_real_fun = x_y_fun real_sort real_sort in
-      let arith_op = [("-", Difference);
-                      ("*", NonLinear);
-                      ("+", Linear);
-                      ("/", NonLinear);
-                     ] in
-      let comp_op = ["<="; "<"; ">="; ">";] in
-      ("-"  , real_real_fun) ::
-        List.map (fun (e, _) -> (e, realreal_real_fun)) arith_op
-       @ List.map (fun e -> (e, realreal_bool_fun)) comp_op
-      ,
-      List.fold_left
-        (fun m (name, kind) -> StringMap.add name kind m)
-        (List.fold_left
-           (fun m name -> StringMap.add name Difference m) StringMap.empty
-           comp_op) arith_op
+    let is_multiplication (id : Ast.identifier) =
+      match id.id_desc with
+      | IdSymbol ( { symbol_desc = SimpleSymbol name; _ }) ->
+         String.compare name "*" = 0
+      | IdSymbol _
+      | IdUnderscore _ -> false
     ;;
 
-    let theory = mk_theory sorts symbols ;;
+    let theory = mk_theory sorts typed_symbols ;;
 end
+
+module SMTInt = SharedArithmetics(
+                struct
+                  let base_sort = int_sort ;;
+                  let local_binary_arith_ops =
+                    [ ("div", Logic.NonLinear); ("mod", Logic.NonLinear); ]
+                  ;;
+                  let local_unary_arith_ops = [ "abs"; ]
+                end) ;;
+
+module SMTReal =  SharedArithmetics(
+                struct
+                  let base_sort = real_sort ;;
+                  let local_binary_arith_ops = [ ("/", Logic.NonLinear);] ;;
+                  let local_unary_arith_ops = [] ;;
+                end) ;;
 
 (* Mixed type accepting both integers and reals *)
 module SMTNumerics = struct

@@ -37,7 +37,6 @@ let arith_sort_compare (s1 : arith_sort) (s2 : arith_sort) : int =
   | Integer, Real -> -1
 ;;
 
-
 type t = {
     smt_name : string;
     mutable array : bool ; (* Array theory on / off ? *)
@@ -108,7 +107,7 @@ let parse_logic (smt_logic : string) =
        idx := !idx + 2;
     | 'B' ->
        logic.bitvectors <- true;
-       (* U is always followed by F *)
+       (* U is always followed by V *)
        assert (!idx < lidx && smt_logic.[!idx + 1] = 'V');
        idx := !idx + 2;
     | 'I' ->
@@ -127,6 +126,7 @@ let parse_logic (smt_logic : string) =
        idx := !idx + 3;
     | _ -> assert false
   done;
+  assert (!idx = lidx + 1);
   logic
   with
   | e ->

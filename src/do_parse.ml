@@ -32,8 +32,8 @@ let apply () =
   try
     let script = Parser.script Lexer.token lexbuf in
     let ext_script = Extended_ast.load_theories script in
-    Undef_unused.apply ext_script;
-    if Config.get_detect () then Checks.detect_logic script;
+    if Config.get_unused () then Undef_unused.apply ext_script;
+    if Config.get_detect () then Inferlogic.detect_logic script;
     if Config.get_pushpop () then Pushpop.apply script;
     if Config.get_reprint () then Pp.pp Format.std_formatter script;
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
