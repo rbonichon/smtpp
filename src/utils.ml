@@ -104,3 +104,13 @@ let string_explode c s =
         List.rev ((string_extract s last_idx (len - 1)) :: l)
   in aux 0 []
 ;;
+
+
+let rec has_more_than (n : int) (f : 'a -> bool) (l : 'a list) =
+  n < 0 ||
+    match l with
+    | [] -> false
+    | h :: tl ->
+       let m = if f h then pred n else n in
+       has_more_than m f tl
+;;

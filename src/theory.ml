@@ -25,7 +25,6 @@ let all_symbol_strings (t : t) : Utils.StringSet.t * Utils.StringSet.t =
   in sortset, StringSet.of_list (List.map fst t.theory_symbols)
 ;;
 
-
 module type Theory = sig
     val theory : t ;;
 end
@@ -62,9 +61,21 @@ module type Arithmetics = sig
     val local_unary_arith_ops : string list ;;
 end
 
+module CommonArithmetics = struct
+    open Ast ;;
+    let is_multiplication (id : Ast.identifier) =
+      match id.id_desc with
+      | IdSymbol ( { symbol_desc = SimpleSymbol name; _ }) ->
+         String.compare name "*" = 0
+      | IdSymbol _
+      | IdUnderscore _ -> false
+    ;;
+end
+
 module SharedArithmetics (A : Arithmetics) = struct
     open Logic ;;
-    open Ast ;;
+
+    include CommonArithmetics ;;
     let sorts = [ A.base_sort; ] ;;
 
     let tt_bool_fun = xx_y_fun A.base_sort bool_sort ;;
@@ -74,7 +85,8 @@ module SharedArithmetics (A : Arithmetics) = struct
     (* Common symbols for real or integer arithmetic *)
     let binary_arith_ops =
       [("-", Difference);
-       ("*", NonLinear);
+       ("*", Linear); (* If the multiplication has only one variable, it is
+                       * linear *)
        ("+", Linear);
       ]
       @ A.local_binary_arith_ops
@@ -97,14 +109,6 @@ module SharedArithmetics (A : Arithmetics) = struct
            (fun m name -> StringMap.add name Difference m)
            StringMap.empty relations)
         binary_arith_ops
-    ;;
-
-    let is_multiplication (id : Ast.identifier) =
-      match id.id_desc with
-      | IdSymbol ( { symbol_desc = SimpleSymbol name; _ }) ->
-         String.compare name "*" = 0
-      | IdSymbol _
-      | IdUnderscore _ -> false
     ;;
 
     let theory = mk_theory sorts typed_symbols ;;

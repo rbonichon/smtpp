@@ -143,7 +143,6 @@ module UF = struct
 end
 
 module QF = struct
-
     exception FoundQ ;;
 
     let rec check_var_binding vbinding =
@@ -242,6 +241,7 @@ module ArithmeticCheck = struct
       let sorts, functions = all_symbol_strings SMTInt.theory in
       Utils.StringSet.union sorts functions
     ;;
+
     let real_symbols =
       let sorts, functions = all_symbol_strings SMTReal.theory in
       Utils.StringSet.union sorts functions
@@ -311,12 +311,23 @@ module ArithmeticCheck = struct
       match qid.qual_identifier_desc with
         | QualIdentifierIdentifier id -> check_identifier r id
         | QualIdentifierAs (id, sort) -> check_sort (check_identifier r id) sort
+    ;;
 
     let rec check_term (r : result) term =
       match term.term_desc with
       | TermSpecConstant _ -> r
       | TermQualIdentifier qid -> check_qual_identifier r qid
       | TermQualIdentifierTerms (qid, terms) ->
+         let id = Ast_utils.id_from_qid qid in
+         let r =
+           if Theory.CommonArithmetics.is_multiplication id &&
+                Utils.has_more_than 1 Ast_utils.is_constant_term terms
+           then
+           (* We have identified a case of multiplication which has more than
+            * one variable *)
+             { r with kind = Some NonLinear; }
+           else r
+         in
          List.fold_left check_term (check_qual_identifier r qid) terms
       | TermLetTerm (vbindings, term) ->
          List.fold_left check_var_binding (check_term r term) vbindings

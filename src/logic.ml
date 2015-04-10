@@ -1,6 +1,8 @@
 open Format ;;
 
 type arith_sort = Integer | Real | Mixed ;;
+(* The basic sort upon which arithmetic can be based *)
+
 type arith_kind = Difference | Linear | NonLinear ;;
 (* Kind of arithmetics used in SMT-LIB benchmarks.
    They form a simple lattice.
