@@ -17,13 +17,12 @@ let combine (t1 : t) (t2 : t) =
   }
 ;;
 
-let all_symbol_strings (t : t) : Utils.StringSet.t =
+let all_symbol_strings (t : t) : Utils.StringSet.t * Utils.StringSet.t =
   let sortset =
     List.fold_left
       (fun set so -> Utils.StringSet.union set (Sorts.basic_sorts so))
       Utils.StringSet.empty t.theory_sorts
-  in
-  StringSet.union sortset (StringSet.of_list (List.map fst t.theory_symbols))
+  in sortset, StringSet.of_list (List.map fst t.theory_symbols)
 ;;
 
 

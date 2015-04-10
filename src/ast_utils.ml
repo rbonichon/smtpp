@@ -10,7 +10,6 @@ let sort_of_svar (sv : sorted_var) =
   | SortedVar (_, so) -> so
 ;;
 
-
 let symbol_of_vbinding (vb : var_binding) =
   match vb.var_binding_desc with
   | VarBinding (sy, _) -> sy
