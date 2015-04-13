@@ -39,6 +39,7 @@ let arith_sort_compare (s1 : arith_sort) (s2 : arith_sort) : int =
   | Integer, Real -> -1
 ;;
 
+
 type t = {
     smt_name : string;
     mutable array : bool ; (* Array theory on / off ? *)
@@ -59,6 +60,17 @@ let default = {
     arithmetic_kind = None;
     arithmetic_sort = None;
   }
+;;
+
+let equal (l1 : t) (l2 : t) =
+  l1.array = l2.array
+  && l1.uninterpreted_functions = l2.uninterpreted_functions
+  && l1.bitvectors =  l2.bitvectors
+  && l1.quantifiers = l2.quantifiers
+  && Utils.opt_compare arith_kind_compare
+                       l1.arithmetic_kind l2.arithmetic_kind = 0
+  && Utils.opt_compare arith_sort_compare
+                       l1.arithmetic_sort l2.arithmetic_sort = 0
 ;;
 
 let parse_logic (smt_logic : string) =

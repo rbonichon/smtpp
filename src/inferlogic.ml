@@ -427,10 +427,15 @@ let detect_logic (s : Ast.script) =
   let quantifiers = QF.has_quantifier s in
   let array = Array.use_theory s in
   let bitvectors = BV.use_theory s in
-  let logic = { Logic.default
-              with array; bitvectors;
-                   uninterpreted_functions; quantifiers;
-                   arithmetic_kind; arithmetic_sort ; } in
+  { Logic.default
+    with array; bitvectors;
+         uninterpreted_functions; quantifiers;
+         arithmetic_kind; arithmetic_sort ;
+  }
+;;
+
+let detect_and_print (s : Ast.script) =
+  let logic = detect_logic s in
   Format.printf "Detected logic : %a (set by script at \"%s\")@."
                 pp_from_core logic
                 (Ast_utils.get_logic s)

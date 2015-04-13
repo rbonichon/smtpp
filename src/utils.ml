@@ -71,11 +71,6 @@ let sfprintf fmt =
   Format.kfprintf return (Format.formatter_of_buffer b) fmt
 ;;
 
-let default_opt v opt =
-  match opt with
-  | None -> v
-  | Some v' -> v'
-;;
 
 let third (_, _, z) = z ;;
 
@@ -105,7 +100,6 @@ let string_explode c s =
   in aux 0 []
 ;;
 
-
 let rec has_more_than (n : int) (f : 'a -> bool) (l : 'a list) =
   n < 0 ||
     match l with
@@ -113,4 +107,18 @@ let rec has_more_than (n : int) (f : 'a -> bool) (l : 'a list) =
     | h :: tl ->
        let m = if f h then pred n else n in
        has_more_than m f tl
+;;
+
+let opt_compare (f : 'a -> 'a -> int) (e1 : 'a option) (e2 : 'a option) =
+  match e1, e2 with
+  | None, None -> 0
+  | Some _, None -> 1
+  | None, Some _ -> -1
+  | Some x, Some y -> f x y
+;;
+
+let default_opt v opt =
+  match opt with
+  | None -> v
+  | Some v' -> v'
 ;;
