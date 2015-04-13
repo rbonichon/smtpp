@@ -7,9 +7,8 @@ let report_error l  =
                  pos.pos_fname pos.pos_lnum o;
 ;;
 
-let lex_file () =
+let lex_file fname =
   try
-    let fname = Config.get_file () in
     let chan =
       match fname with
       | "-" -> stdin
@@ -28,7 +27,7 @@ let lex_file () =
 ;;
 
 let apply () =
-  let (lexbuf, _close) = lex_file () in
+  let (lexbuf, close) = lex_file (List.hd (Config.get_files ()))  in
   try
     let script = Parser.script Lexer.token lexbuf in
     let ext_script = Extended_ast.load_theories script in
@@ -38,6 +37,7 @@ let apply () =
     if Config.get_reprint () then Pp.pp Format.std_formatter script;
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
     if Config.get_obfuscate () then Obfuscator.apply ext_script;
+    close ();
   with
   | Lexer.LexError msg ->
      Format.eprintf "Parse error: %s@." msg;

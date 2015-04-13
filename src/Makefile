@@ -1,5 +1,6 @@
 # Basename of the executable we want to produce
 EXE=smtpp
+TEST=$(EXE)_test
 NAT=$(EXE).opt
 BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
@@ -26,6 +27,7 @@ MLFILES_PRE = \
 MLFILES_TRANS = preprocessor undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
+TESTMAIN = test_main
 MLIFILES = ast
 OTHERFILES = $(PARSER:%=%.mly) $(LEXER=%=%.mll)
 SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
@@ -36,17 +38,26 @@ SRCFILES = $(SRCMLFILES) $(OTHERFILES)
 GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
 CAMLFILES = $(SRCMLFILES) $(GENFILES)
 
-CMXFILES_LIB = $(MLFILES_PRE:%=%.cmx) \
+CORE_CMXFILES = $(MLFILES_PRE:%=%.cmx) \
 	$(LEXER:%=%.cmx) \
 	$(PARSER:%=%.cmx) \
 	$(MLFILES_TRANS:%=%.cmx) \
-	$(MLFILES_POST:%=%.cmx) \
-	smtpplib.cmx
+	$(MLFILES_POST:%=%.cmx)
+
+CORE_CMOFILES = $(MLFILES_PRE:%=%.cmx) \
+	$(LEXER:%=%.cmx) \
+	$(PARSER:%=%.cmx) \
+	$(MLFILES_TRANS:%=%.cmx) \
+	$(MLFILES_POST:%=%.cmx)
+
+
+CMXFILES_LIB =  $(CORE_CMXFILES) smtpplib.cmx
 CMOFILES_LIB = $(CMXFILES_LIB:%.cmx=%.cmo)
 
 CMIFILES = $(MLIFILES:%=%.cmi)
-CMXFILES = $(CMXFILES_LIB) $(MAIN:%=%.cmx)
+CMXFILES = $(CORE_CMXFILES) $(MAIN:%=%.cmx)
 CMOFILES = $(CMXFILES:%.cmx=%.cmo)
+CMXFILES_TEST = $(CMXFILES_LIB) $(TESTMAIN:%=%.cmx)
 CFILES = libwrap
 CSRC = $(CFILES:%=%.c)
 COBJS = $(CFILES:%=%.o)
@@ -65,9 +76,14 @@ $(BYT): depend $(CMIFILES) $(CMOFILES)
 	$(PP) "LINK  $@"
 	$(CAMLBYT) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMOFILES)
 
+$(TEST): depend $(CMXFILES_TEST)
+	$(PP) "LINK $@"
+	$(CAMLBIN) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMXFILES_TEST)
+
 static: $(SNAT)
 opt: $(NAT)
 byt: $(BYT)
+tester: $(TEST)
 
 $(SNAT): depend $(CMXFILES)
 	$(PP) "STATIC $@"

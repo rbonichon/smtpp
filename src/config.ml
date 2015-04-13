@@ -26,10 +26,15 @@ let genr_bool_switch () =
 
 let set_debug, get_debug = genr_bool_switch () ;;
 
+let add_file, get_files =
+  let (files : string list ref) = ref ([] : string list) in
+  (fun (f : string) -> files := f :: !files),
+  (fun () -> !files)
+;;
+
 let set_file, get_file =
   let file = ref "-" in
-  (fun s ->
-   if !file = "-" then file := s),
+  (fun fname -> file := fname),
   (fun () -> !file)
 ;;
 
@@ -55,7 +60,7 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
-let version = "e28e295ed51f96ff1bc1d33a8b1df7f410652c43 (2015-04-13 09:55:28 -0300)" ;;
+let version = "763e8f2e4af9cd2f0837e3ef55339ed29a9b3d43 (2015-04-13 10:17:05 -0300)" ;;
 
 let pp_version () =
   Format.printf "%s@." version

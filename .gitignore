@@ -37,3 +37,4 @@ smtpp.opt
 *.svg
 /scripts/exe.log
 /scripts/tools.pdf
+/src/smtpp_test
