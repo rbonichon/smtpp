@@ -29,13 +29,11 @@ let _pp_loc fmt (b, e)  =
 ;;
 
 let pp_list pp_f fmt elts =
-  fprintf fmt "@[<hov 2>";
   let rec pp_list_aux fmt = function
     | [] -> ()
     | [e] -> fprintf fmt "%a" pp_f e
     | e :: es -> fprintf fmt "%a@ %a" pp_f e pp_list_aux es
   in pp_list_aux fmt elts;
-  fprintf fmt "@]";
 ;;
 
 let pp_numeral fmt n = fprintf fmt "%s" n ;;
@@ -96,7 +94,6 @@ let pp_qual_identifier fmt qualid =
              pp_sort sort
 ;;
 
-
 let pp_sorted_var fmt svar =
   match svar.sorted_var_desc with
   | SortedVar (symb, sort) ->
@@ -137,23 +134,23 @@ let rec pp_term fmt term =
   | TermSpecConstant sc -> pp_spec_constant fmt sc
   | TermQualIdentifier qualid -> pp_qual_identifier fmt qualid
   | TermQualIdentifierTerms (qualid, terms) ->
-     fprintf fmt "@[<hov 2>(%a@ %a)@]"
+     fprintf fmt "@[<v 1>(%a@ %a)@]"
              pp_qual_identifier qualid
              pp_terms terms
   | TermLetTerm (varbindings, term) ->
-     fprintf fmt "@[<hov 2>(let@ (%a)@ %a)@]"
+     fprintf fmt "@[<hov 0>(let@ (@[<v 0>%a@])@ %a)@]"
              pp_var_bindings varbindings
              pp_term term
   | TermForallTerm (svars, term) ->
-     fprintf fmt "@[<hov 2>(forall@ (@[<hov>%a@])@ %a)@]"
+     fprintf fmt "@[<hov 1>(forall@ (@[<hov>%a@])@ %a)@]"
              pp_sorted_vars svars
              pp_term term
   | TermExistsTerm (svars, term) ->
-     fprintf fmt "@[<hov 2>(exists@ (@[<hov>%a@])@ %a)@]"
+     fprintf fmt "@[<hov 1>(exists@ (@[<hov>%a@])@ %a)@]"
              pp_sorted_vars svars
              pp_term term
   | TermAnnotatedTerm (term, attrs) ->
-     fprintf fmt "@[<hov 2>(!@ %a %a)@]"
+     fprintf fmt "@[<hov 1>(!@ %a %a)@]"
              pp_term term
              pp_attributes attrs
 
@@ -162,7 +159,7 @@ and pp_terms fmt terms = fprintf fmt "%a" (pp_list pp_term) terms
 and pp_var_binding fmt vbinding =
   match vbinding.var_binding_desc with
   | VarBinding (symb, term) ->
-     fprintf fmt "(%a@ %a)" pp_symbol symb pp_term term
+     fprintf fmt "@[<hov 1>(%a@ %a)@]" pp_symbol symb pp_term term
 
 and pp_var_bindings fmt vbindings = pp_list pp_var_binding fmt vbindings ;;
 
@@ -212,7 +209,7 @@ let pp_smt_option fmt smt_option =
 let pp_cmd fmt cmd =
   match cmd.command_desc with
   | CmdAssert t ->
-     fprintf fmt "@[<hov 2>assert@ %a@]" pp_term t
+     fprintf fmt "@[<hov 0>assert@ %a@]" pp_term t
   | CmdCheckSat -> fprintf fmt "check-sat"
   | CmdCheckSatAssuming symbs ->
      fprintf fmt "check-sat-assuming@ (%a)" pp_symbols symbs
@@ -284,7 +281,9 @@ let pp_commands fmt cmds =
  Format.fprintf fmt "@[<v 0>%a@]@." pp_command_list cmds
 ;;
 
-let pp fmt (s: Ast.script) = pp_commands fmt s.script_commands ;;
+let pp fmt (s: Ast.script) =
+  Format.set_max_indent 25;
+  pp_commands fmt s.script_commands ;;
 
 let pp_extended fmt (s : Extended_ast.script) =
   pp fmt (Extended_ast.to_ast_script s)
