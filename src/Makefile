@@ -23,7 +23,7 @@ LEXER = lexer
 MLFILES_PRE = \
 	locations ast_utils utils config io \
 	sorts theory logic extended_ast pp inferlogic
-MLFILES_TRANS = preprocessor undef_unused pushpop obfuscator
+MLFILES_TRANS = undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
 MLIFILES = ast
