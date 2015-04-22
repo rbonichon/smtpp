@@ -18,9 +18,17 @@ else
     if test "$OCAMLCDOTOPT" != no; then
         OCAMLC=$OCAMLCDOTOPT
     fi
-    OCAMLCVERSION=`$OCAMLC -version`
     OCAMLBEST=byt
 fi
+
+AC_MSG_CHECKING([version of OCaml])
+OCAMLCVERSION=`$OCAMLC -version`
+LEAST_VERSION="4.02.1"
+case $OCAMLCVERSION in
+     4.02*) AS_ECHO("Good! ($OCAMLCVERSION)");;
+     *) AC_MSG_ERROR("Please use at least $LEAST_VERSION (found $OCAMLCVERSION).");;
+esac
+
 
 # ocamlopt native compiler
 AC_CHECK_PROG(OCAMLOPT, ocamlopt, ocamlopt, no)
