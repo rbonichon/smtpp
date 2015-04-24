@@ -37,6 +37,9 @@ parser.add_argument("-t", "--timeout", dest = "timeout",
 parser.add_argument("-g", "--graph", dest = "graph", default=False,
                     action="store_true",
                     help = " enables graph production")
+parser.add_argument("-oat", "--one-at-time", dest = "oat", default=False,
+                    action="store_true",
+                    help = " make separate benches for directories")
 
 args = parser.parse_args()
 
@@ -76,6 +79,10 @@ class Bench(object):
         self.results = dict()
         self.restypes = dict()
         self.timeouts = []
+        self.benchname = ""
+
+    def set_bench_name(self, name):
+        self.benchname = name
 
     def run(self, benchfile):
         if self.toolcmd is not None:
@@ -110,7 +117,10 @@ class Bench(object):
 
     def pfile(self):
         fname = self.toolname.replace(" ", "_")
-        return os.path.join(args.pickledir, "{}.pickle".format(fname))
+        dirname = os.path.join(args.pickledir, self.benchname)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        return os.path.join(dirname, "{}.pickle".format(fname))
 
     def dump(self):
         pickle.dump(self, open(self.pfile(), "wb"))
@@ -142,8 +152,11 @@ class Bench(object):
         for _, info in res:
             tok += info["time"]
         avg = tok / okbench if okbench > 0 else -1
-        tmax = max([ info["time"] for (_, info) in res ])
-        tmin = min([ info["time"] for (_, info) in res ])
+        tmax = -1
+        tmin = -1
+        if res != []:
+            tmax = max([ info["time"] for (_, info) in res ])
+            tmin = min([ info["time"] for (_, info) in res ])
         f.write("Avg time: {0}\n".format(avg))
         f.write("Max time: {0}\n".format(tmax))
         f.write("Min time: {0}\n".format(tmin))
@@ -340,17 +353,6 @@ class BenchCompare(object):
         return
 
 
-
-def mk_bench(toolbench, benchfiles):
-    """ Launch the benchmark for a given tool with provided command """
-    n = len(benchfiles)
-    for i, bf in enumerate(benchfiles, start = 1):
-        logging.debug("{1} / {2} : {0} {3}".format(toolbench.toolname, i, n, bf))
-        toolbench.run(bf)
-    toolbench.dump()
-    toolbench.pp_summary(sys.stdout)
-    return toolbench
-
 smt2file = re.compile("\S+.smt2")
 def is_smt2_file(f):
     if re.match(smt2file, f):
@@ -387,13 +389,18 @@ else:
     config.read(args.configfile)
 
     # The list of files to be benchmarked
-    benchfiles = []
+    benchfiles = [] if args.oat else [("all", [])]
     for dtitle, dname in config['bench_directories'].items():
         logging.debug("Adding " + dname)
+        dirbenches = []
         for (dirpath, _, filenames) in os.walk(dname):
             for f in filenames:
                 if is_smt2_file(f):
-                    benchfiles.insert(0, os.path.join(dirpath,f))
+                    dirbenches.insert(0, os.path.join(dirpath,f))
+        if args.oat:
+            benchfiles.insert(0, (dtitle, dirbenches))
+        else:
+            benchfiles[0][1].extend(dirbenches)
 
     logging.debug("Added {} benchmarks".format(len(benchfiles)))
 
@@ -418,7 +425,19 @@ else:
 
         # do the benchmark
 
-    benches = [ mk_bench(t, benchfiles) for t in tools ]
+    def mk_bench(toolbench, benchname, filenames):
+        """ Launch the benchmark for a given tool with provided command """
+        n = len(filenames)
+        toolbench.set_bench_name(benchname)
+        print(n)
+        for i, bf in enumerate(filenames, start = 1):
+            logging.debug("{1} / {2} : {0} {3}".format(toolbench.toolname, i, n, bf))
+            toolbench.run(bf)
+            toolbench.dump()
+            toolbench.pp_summary(sys.stdout)
+        return toolbench
+
+    benches = [ mk_bench(t, n, b) for t in tools for n, b in benchfiles]
 
 
 if args.graph:
