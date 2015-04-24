@@ -22,7 +22,7 @@ PARSER = parser
 LEXER = lexer
 MLFILES_PRE = \
 	locations ast_utils utils config io \
-	sorts theory logic extended_ast pp inferlogic
+	sorts theory logic extended_ast pp pre_LA inferlogic
 MLFILES_TRANS = undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
@@ -44,7 +44,7 @@ CMXFILES_LIB = $(MLFILES_PRE:%=%.cmx) \
 	smtpplib.cmx
 CMOFILES_LIB = $(CMXFILES_LIB:%.cmx=%.cmo)
 
-CMIFILES = $(MLIFILES:%=%.cmi)
+CMIFILES = $(MLIFILES:%=%.cmi) 
 CMXFILES = $(CMXFILES_LIB) $(MAIN:%=%.cmx)
 CMOFILES = $(CMXFILES:%.cmx=%.cmo)
 CFILES = libwrap

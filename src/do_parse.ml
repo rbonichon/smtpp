@@ -53,6 +53,7 @@ let apply () =
     if Config.get_detect () then Inferlogic.detect_logic script;
     if Config.get_pushpop () then Pushpop.apply script;
     if Config.get_reprint () then Pp.pp Format.std_formatter script;
+    if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;   
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
     if Config.get_obfuscate () then Obfuscator.apply ext_script;
   with
