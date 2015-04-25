@@ -75,20 +75,29 @@ class Bench(object):
                 logging.debug("{} not found in PATH".format(binary))
                 raise BenchError("{} not found".format(binary))
         self.toolcmd = tool["cmd"]
+        self.reset()
+
+    def reset(self):
         self.total = 0
         self.results = dict()
         self.restypes = dict()
         self.timeouts = []
         self.benchname = ""
+        self.last = ""
+        self.benchnumbers = 0
 
     def set_bench_name(self, name):
         self.benchname = name
+
+    def set_bench_numbers(self, n):
+        self.benchnumbers = n
 
     def run(self, benchfile):
         if self.toolcmd is not None:
             cmd = "{0} {1}".format(self.toolcmd, benchfile)
             #        logging.debug("{0}".format(cmd))
             self.total += 1
+            self.last = benchfile
             tinit = os.times()
             sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
             try:
@@ -131,6 +140,8 @@ class Bench(object):
         self.total = o.total
         self.results = o.results
         self.restypes = o.restypes
+        self.benchname = o.benchname
+        self.benchnumbers = o.benchnumbers
 
     def load_pickle(self, pfile):
         logging.debug("Loading pickle file {}".format(pfile))
@@ -147,13 +158,17 @@ class Bench(object):
         f.write('{0} ("{1}")\n'.format(self.toolname, self.toolcmd))
         res = [ (k, v) for (k, v) in self.results.items() if v["ret"] == 0 ]
         okbench = len(res)
-        f.write("{1} / {0} benchs done\n".format(self.total, okbench))
+        f.write("{1} / {0} / {2} benchs done\n".format(self.total,
+                                                       okbench,
+                                                       self.benchnumbers))
+        f.write("Last was : {}\n".format(self.last))
+        f.write("Last time: {}\n".format(self.results[self.last]["time"]))
         tok = 0
         for _, info in res:
             tok += info["time"]
-        avg = tok / okbench if okbench > 0 else -1
-        tmax = -1
-        tmin = -1
+        avg = tok / okbench if okbench > 0 else None
+        tmax = None
+        tmin = None
         if res != []:
             tmax = max([ info["time"] for (_, info) in res ])
             tmin = min([ info["time"] for (_, info) in res ])
@@ -162,6 +177,11 @@ class Bench(object):
         f.write("Min time: {0}\n".format(tmin))
         for k, n in self.restypes.items():
             f.write("{0} = {1}\n".format(k, n))
+
+
+    def pp(self, f):
+        self.pp_summary(f)
+
 
     def bench2list(self):
         #l = [ (k, v) for (k, v) in self.results.items() ]
@@ -202,7 +222,7 @@ class Stat(object):
     def __init__(self, total):
         self.wins = 0
         self.total = total
-        self.ko_wins = 0
+        self.kowins = 0
         self.windiff_sum = 0
         self.windiff_max = 0
         self.max_name = None
@@ -221,12 +241,12 @@ class Stat(object):
         return self.windiff_sum / self.wins if self.wins > 0 else 0
 
     def all_wins(self):
-        return self.wins + self.ko_wins
+        return self.wins + self.kowins
 
     def pp(self, f):
-        twins = self.wins + self.ko_wins
+        twins = self.wins + self.kowins
         f.write("Wins : {} / {}\n".format(twins, self.total ))
-        f.write("KO : {}\n".format(self.ko_wins))
+        f.write("KO : {}\n".format(self.kowins))
         f.write("Avg win : {0:.4f} \n".format(
             self.windiff_sum / self.wins if self.wins > 0 else 0
         ))
@@ -428,16 +448,19 @@ else:
     def mk_bench(toolbench, benchname, filenames):
         """ Launch the benchmark for a given tool with provided command """
         n = len(filenames)
+        toolbench.reset()
+        toolbench.set_bench_numbers(n)
         toolbench.set_bench_name(benchname)
         print(n)
         for i, bf in enumerate(filenames, start = 1):
             logging.debug("{1} / {2} : {0} {3}".format(toolbench.toolname, i, n, bf))
             toolbench.run(bf)
-            toolbench.dump()
             toolbench.pp_summary(sys.stdout)
+        toolbench.dump()
+        toolbench.reset()
         return toolbench
 
-    benches = [ mk_bench(t, n, b) for t in tools for n, b in benchfiles]
+    benches = [ mk_bench(t, n, b) for n, b in benchfiles for t in tools ]
 
 
 if args.graph:
