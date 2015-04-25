@@ -57,7 +57,6 @@ module SymbolSet =
     )
 ;;
 
-
 let mk_header fmt s =
   let slen = String.length s in
   let sub_hdr = String.make slen '=' in
@@ -105,7 +104,6 @@ let string_explode c s =
   in aux 0 []
 ;;
 
-
 let rec has_more_than (n : int) (f : 'a -> bool) (l : 'a list) =
   n < 0 ||
     match l with
@@ -114,3 +112,4 @@ let rec has_more_than (n : int) (f : 'a -> bool) (l : 'a list) =
        let m = if f h then pred n else n in
        has_more_than m f tl
 ;;
+

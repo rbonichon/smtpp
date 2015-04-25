@@ -19,6 +19,10 @@
     open Ast
     open Locations ;;
 
+    let pp_success () =
+       if Config.get_smtsuccess () then Format.printf "success@.";
+    ;;
+
     (* Helper construction functions.
        File locations is handled in production rules.
        *)
@@ -28,6 +32,7 @@
     let mk_sort sort_desc sort_loc = { sort_desc; sort_loc; } ;;
 
     let mk_command command_desc command_loc =
+      pp_success ();
       { command_desc; command_loc; }
     ;;
 
@@ -138,7 +143,7 @@
 %%
 
 script:
-| commands=delimited(LPAREN,command,RPAREN)*; EOF 
+| commands=delimited(LPAREN,command,RPAREN)*; EOF
   { let loc = mk_loc $startpos $endpos in
     mk_script commands loc }
 ;
