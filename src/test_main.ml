@@ -62,15 +62,31 @@ let create_log_file testname dir () =
     | Simple -> "_generic", ""
   in
    let test_log_file, f_oc =
-     Filename.open_temp_file ("smtpp"^prefix) ("_"^suffix^".log") in
+     Filename.open_temp_file ("smtpp_"^prefix^"_"^suffix) (".log") in
    Io.log "New log file %s created@." test_log_file;
    fname := test_log_file;
    oc := f_oc;
    fmt := Format.formatter_of_out_channel f_oc;
 ;;
 
+let close_log () =
+  Io.log "Closing %s@." !fname;
+  Pervasives.close_out !oc;
+  fname := "";
+  oc := stdout ;
+  fmt := Format.std_formatter
+;;
+
+let pp_time fmt (tm : Unix.tm) =
+  let open Unix in 
+  Format.fprintf fmt "%d%d%d %d:%d"
+                 tm.tm_year tm.tm_mon tm.tm_mday tm.tm_hour tm.tm_min
+;;
+
 let mk_tests testname dir do_test =
   create_log_file testname dir ();
+  let time = Unix.gmtime (Unix.time ()) in
+  Format.fprintf !fmt "@.@.## BEGIN %s %s %a@." testname dir pp_time time;
   List.iter
     (fun f ->
      let lexbuf, close = Do_parse.lex_file f in
@@ -85,8 +101,11 @@ let mk_tests testname dir do_test =
      end;
      close ();
     ) (Config.get_files ());
-  close_out !oc;
+  Format.fprintf !fmt "@.@.## --END@.@.";
+  Format.pp_print_flush !fmt ();
+  close_log ()
 ;;
+
 
 let test_detection s =
   let s = Extended_ast.to_ast_script s in
@@ -127,7 +146,7 @@ let test_use_def s =
 
 let execute_tests_on_files ?dir:(ldir="") () =
   if Config.get_detect () then mk_tests "logic_inf" ldir test_detection;
-  if Config.get_unused () then mk_tests "def_use" ldir test_use_def;
+  if Config.get_unused () then (mk_tests "def_use" ldir test_use_def;);
 ;;
 
 let list_directories dir =
@@ -138,15 +157,15 @@ let list_directories dir =
 ;;
 
 let list_smt2_files dir =
-  let is_smt2file filename = Filename.check_suffix filename "smt2" in
+  let is_smt2file filename = Filename.check_suffix filename ".smt2" in
   let rec aux dirs files =
     match dirs with
     | [] -> files
     | dir :: dirs ->
        Io.debug "Listing %s@." dir;
-       let files = List.map (Filename.concat dir)
+       let dirfiles = List.map (Filename.concat dir)
                             (Array.to_list (Sys.readdir dir)) in
-       let subdirs, pure_files = List.partition Sys.is_directory files in
+       let subdirs, pure_files = List.partition Sys.is_directory dirfiles in
        let smt2files = List.filter is_smt2file pure_files in
        aux (dirs @ subdirs) (smt2files @ files)
   in aux [dir] []
@@ -171,7 +190,9 @@ let main () =
       List.iter
         (fun dir ->
          List.iter Config.add_file (list_smt2_files dir);
-         execute_tests_on_files ~dir ())
+         execute_tests_on_files ~dir ();
+         Config.clear_files (); 
+        )
         smtdirs;
     end
   else execute_tests_on_files ()
