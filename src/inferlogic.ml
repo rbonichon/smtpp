@@ -25,14 +25,6 @@ module type Check = sig
     val check_command : Ast.command -> Ast.command ;;
 end
 
-
-module Combine(C1: Check)(C2 : Check) : Check = struct
-    let check_constant c = C2.check_constant (C1.check_constant c) ;;
-    let check_symbol s = C2.check_symbol (C1.check_symbol s) ;;
-    let check_term t = C2.check_term (C1.check_term t) ;;
-    let check_command cmd = C2.check_command (C1.check_command cmd);;
-end
-
 module BasicInference (T : Theory.Theory) = struct
     exception Detected ;;
     open Utils ;;
@@ -338,11 +330,14 @@ module ArithmeticCheck = struct
          let id = Ast_utils.id_from_qid qid in
          let r =
            if Theory.CommonArithmetics.is_multiplication id &&
-                Utils.has_more_than 1 Ast_utils.is_constant_term terms
-           then
-           (* We have identified a case of multiplication which has more than
-            * one variable *)
+                Utils.has_more_than 1 Ast_utils.is_variable_term terms
+           then begin
+             Io.debug "Non-linear multiplication detected on %a@."
+                      Pp.pp_term term;
+             (* We have identified a case of multiplication which has more than
+              * one variable *)
              { r with kind = Some NonLinear; }
+             end
            else r
          in
          List.fold_left check_term (check_qual_identifier r qid) terms
