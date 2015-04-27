@@ -21,7 +21,7 @@ include ../Caml.mk
 PARSER = parser
 LEXER = lexer
 MLFILES_PRE = \
-	locations ast_utils utils config io \
+	version locations ast_utils utils config io \
 	sorts theory logic extended_ast pp inferlogic
 MLFILES_TRANS = undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
@@ -86,12 +86,14 @@ lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(MLOBJS) $(COBJS)
 #	ocamlmklib -verbose -o smtpp $(COBJS)
 # ocamlmklib -verbose -custom -o smtpp $(CMOFILES_LIB) $(CMXFILES_LIB) $(COBJS)
 
-.PHONY: beforedepend depend
+.PHONY: beforedepend depend version.ml
 
-# There are genereated files so we might need to do depend twice
+# There are generated files so we might need to do depend twice
 # beforedepend serves exactly that purpose
+version.ml:
+	echo 'let version = "$(VERSION)"' > version.ml
+
 beforedepend: $(CAMLFILES)
-	sed -i -e 's/let version = ".*"/let version = "$(VERSION)"/g' config.ml
 	$(CAMLDEP) $(CAMLINCLUDES) $(CAMLFILES) > .depend
 
 depend:: beforedepend $(CAMLFILES)
