@@ -18,7 +18,6 @@
 (* Default message to the user *)
 let umsg = "Usage: smtpp <file>";;
 
-
 (*
  * Specification of the known command-line switches of this program.
  * See OCaml's Arg module.
@@ -28,7 +27,7 @@ let rec argspec =
   "--help", Arg.Unit print_usage ,
   " print this option list and exits";
   "-help", Arg.Unit print_usage ,
-  " print this option list and exits";
+  "  print this option list and exits";
   "-pp", Arg.Unit (fun () -> Config.set_reprint true),
   " prints the SMT-LIB AST read on stdout";
   "-debug", Arg.Unit (fun () -> Config.set_debug true),
@@ -57,8 +56,7 @@ and print_usage () =
 ;;
 
 let main () =
-  Config.set_preprocessor true;
-  Arg.parse argspec Config.set_file umsg;
+  Arg.parse (Arg.align argspec) Config.set_file umsg;
   Do_parse.apply ()
 ;;
 
