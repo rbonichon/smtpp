@@ -57,7 +57,6 @@ module SymbolSet =
     )
 ;;
 
-
 let mk_header fmt s =
   let slen = String.length s in
   let sub_hdr = String.make slen '=' in

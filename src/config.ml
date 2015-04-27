@@ -41,6 +41,7 @@ let set_file, get_file =
 let set_pushpop, get_pushpop = genr_bool_switch () ;;
 
 let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;
+set_smtsuccess true ;; (* Enable success printing by default *)
 
 let set_reprint, get_reprint = genr_bool_switch () ;;
 
@@ -60,8 +61,6 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
-let version = "da355e63c6a9f1700fb77cfd1350bbc7bcc32b7e (2015-04-27 13:28:46 -0300)" ;;
-
 let pp_version () =
-  Format.printf "%s@." version
+  Format.printf "%s@." Version.version
 ;;
