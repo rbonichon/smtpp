@@ -167,14 +167,5 @@ let apply (script: Extended_ast.script) =
   let unused = SymbolSet.diff vs.user_defined vs.used in
   let undefined =
     SymbolSet.diff vs.used (SymbolSet.union vs.user_defined vs.theory_defined)
-  in
-  let pp_set (title : string) (s : SymbolSet.t) =
-    if s <> SymbolSet.empty then
-      Format.printf
-        "@[<v 0>%a%a@]"
-        Utils.mk_header title
-        pp_symbols s
-  in
-  pp_set "Unused symbols" unused;
-  pp_set "Undefined symbols" undefined;
+  in unused, undefined
 ;;

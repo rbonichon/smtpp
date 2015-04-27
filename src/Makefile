@@ -63,7 +63,7 @@ CSRC = $(CFILES:%=%.c)
 COBJS = $(CFILES:%=%.o)
 MLOBJS = $(CMOFILES:%.cmo=%.o)
 
-LIBS =
+LIBS = unix
 OPTLIBDEPS = $(LIBS:%=%.cmxa)
 LIBDEPS = $(LIBS:%=%.cma)
 
@@ -78,7 +78,7 @@ $(BYT): depend $(CMIFILES) $(CMOFILES)
 
 $(TEST): depend $(CMXFILES_TEST)
 	$(PP) "LINK $@"
-	$(CAMLBIN) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMXFILES_TEST)
+	$(CAMLBIN) $(CAMLINCLUDES) -o $@ $(OPTLIBDEPS) $(CMXFILES_TEST)
 
 static: $(SNAT)
 opt: $(NAT)
