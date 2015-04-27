@@ -63,6 +63,10 @@ let rec is_constant_term (t : Ast.term) : bool =
   | TermExistsTerm _ -> false
 ;;
 
+let is_variable_term (t : Ast.term) : bool = 
+  not (is_constant_term t)
+;;
+
 let mk_symbol (s:string) =
   { symbol_desc = SimpleSymbol s;
     symbol_loc = Locations.dummy_loc;
