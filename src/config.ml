@@ -26,22 +26,19 @@ let genr_bool_switch () =
 
 let set_debug, get_debug = genr_bool_switch () ;;
 
-let add_file, get_files =
+let add_file, get_files, set_file, get_file =
   let (files : string list ref) = ref ([] : string list) in
   (fun (f : string) -> files := f :: !files),
-  (fun () -> !files)
+  (fun () -> !files),
+  (fun f -> files := [f]),
+  (fun () -> List.hd !files)
 ;;
 
-let set_file, get_file =
-  let file = ref "-" in
-  (fun fname -> file := fname),
-  (fun () -> !file)
-;;
 
 let set_pushpop, get_pushpop = genr_bool_switch () ;;
 
 let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;
-set_smtsuccess true ;; (* Enable success printing by default *)
+(* set_smtsuccess false ;; (* Enable success printing by default *)*)
 
 let set_reprint, get_reprint = genr_bool_switch () ;;
 
