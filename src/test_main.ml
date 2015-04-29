@@ -98,6 +98,7 @@ let mk_tests testname dir pre_tests do_test post_tests =
   let basedir = Filename.basename dir in
   Format.fprintf !fmt "## %s@." basedir;
   pre_tests ();
+  let errors = ref 0 in
   let time = Unix.gmtime (Unix.time ()) in
   Format.fprintf !fmt "@[<v 0>@ \
                        ~~~@ BEGIN %s %a@ " testname pp_time time;
@@ -111,12 +112,15 @@ let mk_tests testname dir pre_tests do_test post_tests =
          let ext_script = Extended_ast.load_theories script in
          do_test ext_script;
        with
-       | _ -> Format.fprintf !fmt "@[<hov 0@]%s : ERROR@]@ " !current_file
+       | _ -> (Format.fprintf !fmt "@[<hov 0>%s : ERROR@]@ "
+                              (chop_path_prefix !smt_directory !current_file);
+               incr errors;)
      end;
      close ();
     ) (Config.get_files ());
   Format.fprintf !fmt "END@ ~~~@]@.@.";
   post_tests ();
+  Format.fprintf !fmt "Errors : %d@." !errors;
   Format.pp_print_flush !fmt ();
   close_log ()
 ;;
