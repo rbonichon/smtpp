@@ -33,15 +33,14 @@ let rec argspec =
   "-version", Arg.Unit Config.pp_version,
   " prints version number";
   "-test-detect-logic", Arg.Unit (fun () -> Config.set_detect true),
-  " infer the logic used by SMT-LIB script (alpha)";
+  " generate test for detect logic";
   "-test-undef-unused", Arg.Unit (fun () -> Config.set_unused true),
-  " infer the logic used by SMT-LIB script (alpha)";
+  " generate test for undef/unused";
   "-smtdir", Arg.String (fun s -> smt_directory := s; test_mode := SMTLIB),
   " set and use this directory as a base for tests. Each subdir is assumed to \
    be a SMT category";
   "-outdir", Arg.Set_string output_directory,
   " uses this directory for logging/output (defaults to .)";
-
 ]
 
 and print_usage () =
@@ -55,14 +54,25 @@ and fmt = ref Format.std_formatter
 and current_file = ref ""
 ;;
 
+let chop_path_prefix path1 path2 =
+  let rec aux basenames dirname =
+    if String.compare dirname path1 = 0 || dirname == "." then
+      match basenames with
+      | [] -> ""
+      | dir :: dirs ->
+         List.fold_left (fun p n -> Filename.concat p n) dir dirs
+    else aux (Filename.basename dirname :: basenames) (Filename.dirname dirname)
+  in aux [] path2
+;;
+
 let create_log_file testname dir () =
-  let prefix, suffix = 
+  let prefix, suffix =
     match !test_mode with
-    | SMTLIB -> testname, Filename.basename dir 
+    | SMTLIB -> testname, Filename.basename dir
     | Simple -> "_generic", ""
   in
    let test_log_file, f_oc =
-     Filename.open_temp_file ("smtpp_"^prefix^"_"^suffix) (".log") in
+     Filename.open_temp_file ("smtpp_"^prefix^"_"^suffix) (".md") in
    Io.log "New log file %s created@." test_log_file;
    fname := test_log_file;
    oc := f_oc;
@@ -78,15 +88,19 @@ let close_log () =
 ;;
 
 let pp_time fmt (tm : Unix.tm) =
-  let open Unix in 
-  Format.fprintf fmt "%d%d%d %d:%d"
+  let open Unix in
+  Format.fprintf fmt "%d-%d-%d %d:%d"
                  tm.tm_year tm.tm_mon tm.tm_mday tm.tm_hour tm.tm_min
 ;;
 
-let mk_tests testname dir do_test =
+let mk_tests testname dir pre_tests do_test post_tests =
   create_log_file testname dir ();
+  let basedir = Filename.basename dir in
+  Format.fprintf !fmt "## %s@." basedir;
+  pre_tests ();
   let time = Unix.gmtime (Unix.time ()) in
-  Format.fprintf !fmt "@.@.## BEGIN %s %s %a@." testname dir pp_time time;
+  Format.fprintf !fmt "@[<v 0>@ \
+                       ~~~@ BEGIN %s %a@ " testname pp_time time;
   List.iter
     (fun f ->
      let lexbuf, close = Do_parse.lex_file f in
@@ -97,27 +111,80 @@ let mk_tests testname dir do_test =
          let ext_script = Extended_ast.load_theories script in
          do_test ext_script;
        with
-       | _ -> Format.fprintf !fmt "%s : ERROR@." !current_file
+       | _ -> Format.fprintf !fmt "@[<hov 0@]%s : ERROR@]@ " !current_file
      end;
      close ();
     ) (Config.get_files ());
-  Format.fprintf !fmt "@.@.## --END@.@.";
+  Format.fprintf !fmt "END@ ~~~@]@.@.";
+  post_tests ();
   Format.pp_print_flush !fmt ();
   close_log ()
 ;;
 
-
-let test_detection s =
-  let s = Extended_ast.to_ast_script s in
-  let detected_logic = Inferlogic.detect_logic s in
-  let declared_logic = Logic.parse_logic (Ast_utils.get_logic s) in
-  if not (Logic.equal detected_logic declared_logic) then
-    Format.fprintf
-      !fmt
-      "%s : %a (declared), %a (detected)@."
-      !current_file
-      Logic.pp_from_core declared_logic
-      Logic.pp_from_core detected_logic;
+let init_test_detection, test_detection , end_test_detection =
+  let h = Hashtbl.create 7 in
+  let ntests = ref 0 in
+  let alerts = ref 0 in
+  let over = ref 0 in
+  let under = ref 0 in
+  let both = ref 0 in
+  (fun () ->
+   Hashtbl.reset h;
+   ntests := 0;
+   over := 0;
+   under := 0;
+   both := 0;
+   alerts := 0;
+   Format.fprintf !fmt "### Raw results@.@."
+  ),
+  (fun s ->
+   incr ntests;
+   let s = Extended_ast.to_ast_script s in
+   let detected_logic = Inferlogic.detect_logic s in
+   let declared_logic = Logic.parse_logic (Ast_utils.get_logic s) in
+   if not (Logic.equal detected_logic declared_logic) then
+     begin
+       incr alerts;
+       Format.fprintf
+         !fmt
+         "@[<hov 0>%d. %s : %a (declared), %a (detected)@]@ "
+         !alerts
+         (chop_path_prefix !smt_directory !current_file)
+         Logic.pp_from_core declared_logic
+         Logic.pp_from_core detected_logic;
+       (try
+         let v = Hashtbl.find h detected_logic in
+         Hashtbl.replace h detected_logic (succ v)
+       with Not_found -> Hashtbl.add h detected_logic 1);
+       (match Logic.one_bigger_dimension detected_logic declared_logic,
+              Logic.one_bigger_dimension declared_logic detected_logic
+        with
+        | true, true -> incr both
+        | true, false -> incr over
+        | false, true -> incr under
+        | false, false -> assert false);
+     end
+  ),
+  (fun () ->
+   Format.fprintf
+     !fmt
+     "@[<v 0>\
+      ### Summary of detection@ \
+      * Alerts : %d / %d@ \
+      * Over : %d@ \
+      * Under : %d@ \
+      * OverUnder : %d@ \
+      * **By categories** :@ \
+        @[<v 0>%a@] \
+      @]@.\
+      "
+     !alerts !ntests !over !under !both
+     (fun fmt h ->
+      Hashtbl.iter
+        (fun k v -> Format.fprintf fmt "  * %a : %d@ " Logic.pp_from_core k v)
+        h
+     ) h;
+  )
 ;;
 
 let pp_symbols fmt (sys : SymbolSet.t) =
@@ -125,28 +192,68 @@ let pp_symbols fmt (sys : SymbolSet.t) =
     (fun sy -> Format.fprintf fmt "%a;@ " Pp.pp_symbol sy) sys
 ;;
 
-
-let test_use_def s =
-  let unused, undef = Undef_unused.apply s in 
-  let pp_set (title : string) (s : SymbolSet.t) =
-    if s <> SymbolSet.empty then
-      Format.fprintf !fmt
-        "@[<v 0>%a%a@]"
-        Utils.mk_header title
-        pp_symbols s
-  in
-  if unused <> SymbolSet.empty || undef <> SymbolSet.empty then begin
-    Format.fprintf !fmt "%s@." !current_file;
-    pp_set "Unused symbols" unused;
-    pp_set "Undefined symbols" undef;
-    end
+let init_test_use_def, test_use_def, end_test_use_def =
+  let alerts = ref 0 in
+  let ntests = ref 0 in
+  let nunused = ref 0 in
+  let nundef = ref 0 in
+  (fun () ->
+   ntests := 0;
+   alerts := 0;
+   nundef := 0;
+   nunused := 0;
+   Format.fprintf !fmt "### Raw results@.@."
+  ),
+  (fun s ->
+   incr ntests;
+   let unused, undef = Undef_unused.apply s in
+   let pp_set (title : string) (s : SymbolSet.t) =
+     if s <> SymbolSet.empty then
+       Format.fprintf !fmt
+                      "@[<v 0>%a%a@]"
+                      Utils.mk_header title
+                      pp_symbols s
+   in
+   let has_unused = unused <> SymbolSet.empty
+   and has_undef = undef <> SymbolSet.empty in
+   if has_unused || has_undef then
+     incr alerts;
+     Format.fprintf
+       !fmt "%d. @[<v 0>%s@ " !alerts (chop_path_prefix !smt_directory !current_file);
+   if unused <> SymbolSet.empty then begin
+     incr nunused;
+     Format.fprintf !fmt "@[<v 2>@ ";
+     pp_set "Unused symbols" unused;
+     Format.fprintf !fmt "@]@ ";
+     end;
+   if undef <> SymbolSet.empty then begin
+       incr nundef;
+       Format.fprintf !fmt "@[<v 2>@ ";
+       pp_set "Undefined symbols" undef;
+       Format.fprintf !fmt "@]@ ";
+     end;
+   if has_unused || has_undef then Format.fprintf !fmt "@]@.";
+  ),
+  (fun () ->
+   Format.fprintf
+     !fmt
+     "@[<v 0>\
+      ### Summary of detection@ \
+      * Alerts : %d / %d@ \
+      * With unused : %d@ \
+      * With undefined : %d@ \
+      @]@.\
+      "
+     !alerts !ntests !nunused !nundef
+  )
 ;;
 
-
-
 let execute_tests_on_files ?dir:(ldir="") () =
-  if Config.get_detect () then mk_tests "logic_inf" ldir test_detection;
-  if Config.get_unused () then (mk_tests "def_use" ldir test_use_def;);
+  if Config.get_detect () then
+    mk_tests "logic_inf" ldir
+             init_test_detection test_detection end_test_detection;
+  if Config.get_unused () then
+    mk_tests "def_use" ldir init_test_use_def test_use_def end_test_use_def;
 ;;
 
 let list_directories dir =
@@ -191,7 +298,7 @@ let main () =
         (fun dir ->
          List.iter Config.add_file (list_smt2_files dir);
          execute_tests_on_files ~dir ();
-         Config.clear_files (); 
+         Config.clear_files ();
         )
         smtdirs;
     end

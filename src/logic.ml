@@ -90,6 +90,18 @@ let equal (l1 : t) (l2 : t) =
                        l1.arithmetic_sort l2.arithmetic_sort = 0
 ;;
 
+let one_bigger_dimension (l1 : t) (l2 : t) =
+  l1.array && not l2.array
+  || l1.uninterpreted_functions && not l2.uninterpreted_functions
+  || l1.bitvectors && not l2.bitvectors
+  || l1.quantifiers && not l2.quantifiers
+  || Utils.opt_compare arith_kind_compare
+                       l1.arithmetic_kind l2.arithmetic_kind > 0
+  || Utils.opt_compare arith_sort_compare
+                       l1.arithmetic_sort l2.arithmetic_sort > 0
+;;
+
+
 let parse_logic (smt_logic : string) =
   let logic = { default with smt_name = smt_logic } in
   let idx = ref 0 in
