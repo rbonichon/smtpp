@@ -18,7 +18,7 @@ smtpp.opt
 /config.status
 /tests/test_parser
 /tests/tester
-/configure
+/configureq
 /src/parser.automaton
 /src/parser.conflicts
 /src/static_smtpp.opt

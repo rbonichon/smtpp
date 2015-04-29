@@ -31,7 +31,7 @@ module StringSet = struct
                 let compare = String.compare
               end );;
 
- let to_list set = fold (fun v l -> v :: l) set []
+  let to_list set = fold (fun v l -> v :: l) set []
 end
 ;;
 
@@ -46,30 +46,31 @@ module SymbolMap =
     )
 ;;
 
-module SymbolSet =
-  Set.Make(
-      struct
-        open Ast ;;
-        type t = symbol ;;
-        let compare s1 s2 =
-          Pervasives.compare s1.symbol_desc s2.symbol_desc ;;
-      end
-    )
+module SymbolSet = struct
+    include
+      Set.Make(
+        struct
+          open Ast ;;
+          type t = symbol ;;
+          let compare s1 s2 =
+            Pervasives.compare s1.symbol_desc s2.symbol_desc ;;
+        end
+        ) ;;
+
+end
 ;;
 
 let mk_header fmt s =
   let slen = String.length s in
   let sub_hdr = String.make slen '=' in
-  Format.fprintf fmt "@[<v 0>%s@ %s@ @]" s sub_hdr
+  Format.fprintf fmt "@[<v 0>%s@ %s@]" s sub_hdr
 ;;
-
 
 let sfprintf fmt =
   let b = Buffer.create 20 in
   let return fmt = Format.pp_print_flush fmt (); Buffer.contents b in
   Format.kfprintf return (Format.formatter_of_buffer b) fmt
 ;;
-
 
 let third (_, _, z) = z ;;
 

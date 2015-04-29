@@ -191,10 +191,7 @@ let init_test_detection, test_detection , end_test_detection =
   )
 ;;
 
-let pp_symbols fmt (sys : SymbolSet.t) =
-  SymbolSet.iter
-    (fun sy -> Format.fprintf fmt "%a;@ " Pp.pp_symbol sy) sys
-;;
+
 
 let init_test_use_def, test_use_def, end_test_use_def =
   let alerts = ref 0 in

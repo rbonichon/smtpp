@@ -186,3 +186,31 @@ let apply (script: Extended_ast.script) =
     SymbolSet.diff vs.used (SymbolSet.union vs.user_defined vs.theory_defined)
   in unused, undefined
 ;;
+
+
+let ppset fmt (s : SymbolSet.t) =
+  SymbolSet.iter (fun s -> Format.fprintf fmt "%a;@ " Pp.pp_symbol s) s
+;;
+
+let pp_result fmt (unused,undef) =
+  Format.fprintf fmt "@[<v 0>";
+  if not (SymbolSet.is_empty unused) then
+    begin
+      Format.fprintf fmt
+        "@[<v 2>%a@ %a@]@ "
+        Utils.mk_header "Unused symbols"
+        ppset unused
+    end;
+  if not (SymbolSet.is_empty undef) then
+    begin
+      Format.fprintf fmt
+        "@[<v 2>%a@ %a@]"
+        Utils.mk_header "Undef symbols"
+        ppset undef
+    end;
+  Format.fprintf fmt "@]";
+;;
+
+let apply_and_pp (script : Extended_ast.script) =
+  Format.printf "%a@." pp_result (apply script)
+;;

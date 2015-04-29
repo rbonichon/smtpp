@@ -37,10 +37,10 @@ let load_theories (s : Ast.script) : script =
   in
   let logic_name = Ast_utils.get_logic s in
   let t = parse_logic logic_name in
-  (* if t.aradd_theory t.array Theory.EmptyTheory.theory; (* FIXME *)*)
+  if t.array then add_theory Theory.SMTArray.theory;
   if t.bitvectors then add_theory Theory.SMTBitVectors.theory;
   (match t.arithmetic_sort with
-   | Some Integer -> add_theory Theory.SMTInt.theory 
+   | Some Integer -> add_theory Theory.SMTInt.theory
    | Some Real -> add_theory Theory.SMTReal.theory
    | Some Mixed -> add_theory Theory.SMTNumerics.theory
    | None -> ()
