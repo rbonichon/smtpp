@@ -39,3 +39,5 @@ smtpp.opt
 /scripts/tools.pdf
 /src/smtpp_test
 /src/version.ml
+/scripts/*.tex
+/scripts/*.pdf
