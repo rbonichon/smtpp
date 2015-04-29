@@ -30,7 +30,6 @@ type constant =
 type symbol_desc =
   | SimpleSymbol of string
   | QuotedSymbol of string
-(*  | PredSymbol of string * sorts option * sorts * sort *)
 ;;
 
 type symbol = {

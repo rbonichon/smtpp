@@ -27,6 +27,17 @@ let sort_of_svar (sv : sorted_var) =
   | SortedVar (_, so) -> so
 ;;
 
+let get_symbol_of_sortid (sort : Ast.sort) : Ast.symbol =
+  match sort.sort_desc with
+  | SortIdentifier id ->
+     begin
+       match id.id_desc with
+       | IdSymbol sy -> sy
+       | IdUnderscore (sy, _) -> sy
+     end
+  | _ -> assert false
+;;
+
 let symbol_of_vbinding (vb : var_binding) =
   match vb.var_binding_desc with
   | VarBinding (sy, _) -> sy
@@ -63,7 +74,7 @@ let rec is_constant_term (t : Ast.term) : bool =
   | TermExistsTerm _ -> false
 ;;
 
-let is_variable_term (t : Ast.term) : bool = 
+let is_variable_term (t : Ast.term) : bool =
   not (is_constant_term t)
 ;;
 

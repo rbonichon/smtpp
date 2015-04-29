@@ -7,6 +7,8 @@ val sort_of_svar : Ast.sorted_var -> Ast.sort ;;
 val symbol_of_vbinding : Ast.var_binding -> Ast.symbol ;;
   (** Extracts the newly defined symbol part out of a variable binding. *)
 
+val get_symbol_of_sortid : Ast.sort ->  Ast.symbol ;;
+
 val mk_symbol : string -> Ast.symbol ;;
   (** [mk_symbol name] creates a dummy symbol for name *)
 

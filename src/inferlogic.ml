@@ -18,13 +18,6 @@
 open Ast ;;
 open Logic ;;
 
-module type Check = sig
-    val check_constant : Ast.constant -> Ast.constant ;;
-    val check_symbol : Ast.symbol -> Ast.symbol ;;
-    val check_term : Ast.term -> Ast.term ;;
-    val check_command : Ast.command -> Ast.command ;;
-end
-
 module BasicInference (T : Theory.Theory) = struct
     exception Detected ;;
     open Utils ;;
@@ -134,12 +127,28 @@ end
 module UF = struct
     exception FoundUF ;;
 
+    let is_theory sort =
+      let sortname =
+        let sy = Ast_utils.get_symbol_of_sortid sort in
+        match sy.symbol_desc with
+        | SimpleSymbol s
+        | QuotedSymbol s -> s
+      in
+      match sortname with
+      | "Int" | "Real" | "Bool" | "Array" | "BitVector" -> true
+      | _ -> false
+    ;;
+
+
     let check_command cmd =
       match cmd.command_desc with
-        | CmdDeclareFun (_, _, sorts, _) ->
+        | CmdDeclareFun (_, _, sorts, sort) ->
            if List.length sorts > 0 then raise FoundUF
+           else if not (is_theory sort) then raise FoundUF;
         | CmdDefineFun _
         | CmdDefineFunRec _ -> raise FoundUF;
+        | CmdDeclareConst (_, sort) ->
+           if not (is_theory sort) then raise FoundUF;
         | _ -> ()
     ;;
 
