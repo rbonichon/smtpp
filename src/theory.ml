@@ -167,11 +167,15 @@ module SMTBitVectors = struct
 
     let symbols = [
         "bvand", unit_sort;
+        "bvnand", unit_sort;
         "bvor", unit_sort;
         "bvneg", unit_sort;
         "bvnot", unit_sort;
         "bvadd", unit_sort;
         "bvsub", unit_sort;
+        "bvmul", unit_sort;
+        "bvudiv", unit_sort;
+        "bvurem", unit_sort;
         "bvlshr", unit_sort;
         "bvlshl", unit_sort;
         "bvshr", unit_sort;
@@ -179,6 +183,19 @@ module SMTBitVectors = struct
         "sign_extend", unit_sort;
         "concat", unit_sort;
         "extract", unit_sort;
+        "zero_extend", unit_sort;
+        (* Unsigned comparison operators *)
+        "bvuge", unit_sort;
+        "bvugt", unit_sort;
+        "bvule", unit_sort;
+        "bvult", unit_sort;
+        (* Signed comparison operators *)
+        "bvslt", unit_sort;
+        "bvsle", unit_sort;
+        "bvsgt", unit_sort;
+        "bvsge", unit_sort;
+        "bv1", unit_sort;
+        "bv0", unit_sort;
       ]
     ;;
 

@@ -120,7 +120,7 @@ let mk_tests testname dir pre_tests do_test post_tests =
     ) (Config.get_files ());
   Format.fprintf !fmt "END@ ~~~@]@.@.";
   post_tests ();
-  Format.fprintf !fmt "Errors : %d@." !errors;
+  Format.fprintf !fmt "Errors : %d@.@." !errors;
   Format.pp_print_flush !fmt ();
   close_log ()
 ;;
@@ -207,33 +207,20 @@ let init_test_use_def, test_use_def, end_test_use_def =
   ),
   (fun s ->
    incr ntests;
-   let unused, undef = Undef_unused.apply s in
-   let pp_set (title : string) (s : SymbolSet.t) =
-     if s <> SymbolSet.empty then
-       Format.fprintf !fmt
-                      "@[<v 0>%a%a@]"
-                      Utils.mk_header title
-                      pp_symbols s
+   let (unused, undef) as uures = Undef_unused.apply s in
+   let has_unused = not (SymbolSet.is_empty unused)
+   and has_undef = not (SymbolSet.is_empty undef)
    in
-   let has_unused = unused <> SymbolSet.empty
-   and has_undef = undef <> SymbolSet.empty in
-   if has_unused || has_undef then
+   if has_unused || has_undef then begin
      incr alerts;
      Format.fprintf
-       !fmt "%d. @[<v 0>%s@ " !alerts (chop_path_prefix !smt_directory !current_file);
-   if unused <> SymbolSet.empty then begin
-     incr nunused;
-     Format.fprintf !fmt "@[<v 2>@ ";
-     pp_set "Unused symbols" unused;
-     Format.fprintf !fmt "@]@ ";
+       !fmt "%d. @[<v 0>%s@ @ %a@]@."
+       !alerts
+       (chop_path_prefix !smt_directory !current_file)
+       Undef_unused.pp_result uures
      end;
-   if undef <> SymbolSet.empty then begin
-       incr nundef;
-       Format.fprintf !fmt "@[<v 2>@ ";
-       pp_set "Undefined symbols" undef;
-       Format.fprintf !fmt "@]@ ";
-     end;
-   if has_unused || has_undef then Format.fprintf !fmt "@]@.";
+   if has_unused then incr nunused ;
+   if has_undef then incr nundef;
   ),
   (fun () ->
    Format.fprintf
