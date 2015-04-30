@@ -27,15 +27,25 @@ let sort_of_svar (sv : sorted_var) =
   | SortedVar (_, so) -> so
 ;;
 
-let get_symbol_of_sortid (sort : Ast.sort) : Ast.symbol =
-  match sort.sort_desc with
-  | SortIdentifier id ->
-     begin
-       match id.id_desc with
-       | IdSymbol sy -> sy
-       | IdUnderscore (sy, _) -> sy
-     end
-  | _ -> assert false
+let symbol_from_id (id : Ast.identifier) =
+    match id.id_desc with
+    | IdSymbol sy -> sy
+    | IdUnderscore (sy, _) -> sy
+;;
+
+let symbols_of_sort (sort : Ast.sort) : Ast.symbol list =
+  let rec aux symbols sort =
+    match sort.sort_desc with
+    | SortIdentifier id -> (symbol_from_id id) :: symbols
+    | SortFun (id, sorts) ->
+       List.fold_left aux ((symbol_from_id id) :: symbols) sorts
+  in aux [] sort
+;;
+
+let string_of_symbol (symbol : Ast.symbol) : string =
+  match symbol.symbol_desc with
+  | SimpleSymbol s
+  | QuotedSymbol s -> s
 ;;
 
 let symbol_of_vbinding (vb : var_binding) =

@@ -126,30 +126,30 @@ end
 
 module UF = struct
     exception FoundUF ;;
+    open Ast_utils ;;
 
-    let is_theory sort =
-      let sortname =
-        let sy = Ast_utils.get_symbol_of_sortid sort in
-        match sy.symbol_desc with
-        | SimpleSymbol s
-        | QuotedSymbol s -> s
+    let is_abstract sort =
+      Io.debug "is known %a@." Pp.pp_sort sort;
+      let has_abstract_sortname (sortname : string) =
+        match sortname with
+        | "Int" | "Real" | "Bool" | "Array" | "BitVector" -> false
+        | _ -> true
       in
-      match sortname with
-      | "Int" | "Real" | "Bool" | "Array" | "BitVector" -> true
-      | _ -> false
-    ;;
+      List.exists
+        (fun symbol -> has_abstract_sortname (string_of_symbol symbol))
+        (symbols_of_sort sort)
+     ;;
 
-
-    let check_command cmd =
-      match cmd.command_desc with
-        | CmdDeclareFun (_, _, sorts, sort) ->
-           if List.length sorts > 0 then raise FoundUF
-           else if not (is_theory sort) then raise FoundUF;
-        | CmdDefineFun _
-        | CmdDefineFunRec _ -> raise FoundUF;
-        | CmdDeclareConst (_, sort) ->
-           if not (is_theory sort) then raise FoundUF;
-        | _ -> ()
+     let check_command cmd =
+       match cmd.command_desc with
+       | CmdDeclareFun (_, _, sorts, sort) ->
+          if List.length sorts > 0 then raise FoundUF
+          else if is_abstract sort then raise FoundUF;
+       | CmdDefineFun _
+       | CmdDefineFunRec _ -> raise FoundUF;
+       | CmdDeclareConst (_, sort) ->
+          if is_abstract sort then raise FoundUF;
+       | _ -> ()
     ;;
 
     let has_uninterpreted_functions (s : Ast.script) =

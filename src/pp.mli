@@ -1,6 +1,9 @@
 val pp_symbol : Format.formatter -> Ast.symbol -> unit ;;
 (** pretty-prints a SMT symbol *)
 
+val pp_sort : Format.formatter -> Ast.sort -> unit ;;
+(** pretty-prints a SMT sort *)
+
 val pp_term : Format.formatter -> Ast.term -> unit ;;
 (** pretty-prints a SMT term *)
 
