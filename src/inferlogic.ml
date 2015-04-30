@@ -132,7 +132,7 @@ module UF = struct
       Io.debug "is known %a@." Pp.pp_sort sort;
       let has_abstract_sortname (sortname : string) =
         match sortname with
-        | "Int" | "Real" | "Bool" | "Array" | "BitVector" -> false
+        | "Int" | "Real" | "Bool" | "Array" | "BitVec" -> false
         | _ -> true
       in
       List.exists
