@@ -163,7 +163,7 @@ script:
 | DECLARESORT symb=symbol; num=NUMERAL;
   { let loc = mk_loc $startpos $endpos in
     mk_command (CmdDeclareSort(symb, num)) loc }
-| DEFINEFUN LPAREN fdef=fun_nonrec_def; RPAREN
+| DEFINEFUN fdef=fun_nonrec_def; 
  { let loc = mk_loc $startpos $endpos in
    mk_command (CmdDefineFun fdef) loc }
 | DEFINEFUNREC LPAREN frdefs=fun_rec_def+; RPAREN
