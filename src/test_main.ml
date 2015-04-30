@@ -56,11 +56,17 @@ and current_file = ref ""
 
 let chop_path_prefix path1 path2 =
   let rec aux basenames dirname =
-    if String.compare dirname path1 = 0 || dirname == "." then
+    Io.debug "%s@." dirname;
+    if String.compare dirname path1 = 0
+       || String.compare dirname "." = 0
+    then
+      begin
+      Io.debug "Chop out@.";
       match basenames with
-      | [] -> ""
+      | [] ->  ""
       | dir :: dirs ->
          List.fold_left (fun p n -> Filename.concat p n) dir dirs
+      end
     else aux (Filename.basename dirname :: basenames) (Filename.dirname dirname)
   in aux [] path2
 ;;
@@ -121,7 +127,7 @@ let mk_tests testname dir pre_tests do_test post_tests =
          let ext_script = Extended_ast.load_theories script in
          do_test ext_script;
        with
-       | e -> 
+       | e ->
           (Format.fprintf
              !fmt "@[<hov 0>%s : ERROR (%s)@]@ "
              (chop_path_prefix !smt_directory !current_file)
@@ -161,7 +167,9 @@ let init_test_detection, test_detection , end_test_detection =
    let declared_logic = Logic.parse_logic (Ast_utils.get_logic s) in
    if not (Logic.equal detected_logic declared_logic) then
      begin
+       Io.debug "Diff detected@.";
        incr alerts;
+       Io.debug "Printing@.";
        Format.fprintf
          !fmt
          "@[<hov 0>%d. %s : %a (declared), %a (detected)@]@ "
@@ -169,10 +177,12 @@ let init_test_detection, test_detection , end_test_detection =
          (chop_path_prefix !smt_directory !current_file)
          Logic.pp_from_core declared_logic
          Logic.pp_from_core detected_logic;
+       Io.debug "Printed msg@.";
        (try
          let v = Hashtbl.find h detected_logic in
          Hashtbl.replace h detected_logic (succ v)
-       with Not_found -> Hashtbl.add h detected_logic 1);
+         with Not_found -> Hashtbl.add h detected_logic 1);
+       Io.debug "Registerd htbl@.";
        (match Logic.one_bigger_dimension detected_logic declared_logic,
               Logic.one_bigger_dimension declared_logic detected_logic
         with
@@ -258,10 +268,12 @@ let execute_tests_on_files ?dir:(ldir="") () =
 ;;
 
 let list_directories dir =
-  List.filter
-    Sys.is_directory
-    (List.map
-       (Filename.concat dir)(Array.to_list (Sys.readdir dir)))
+  List.sort
+    String.compare (
+      List.filter
+        Sys.is_directory
+        (List.map
+           (Filename.concat dir)(Array.to_list (Sys.readdir dir))))
 ;;
 
 let list_smt2_files dir =
@@ -293,6 +305,9 @@ let main () =
 
   if !smt_directory <> "" then
     begin
+      let len = String.length !smt_directory in
+      if !smt_directory.[len - 1] = '/' then
+        smt_directory := String.sub !smt_directory 0 (len - 1);
       assert (Config.get_files () = []);
       let smtdirs = list_directories !smt_directory in
       List.iter
