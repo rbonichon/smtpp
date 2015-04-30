@@ -18,10 +18,12 @@
 (* Pretty printer for the AST *)
 open Format
 open Lexing
+open Locations
 open Ast
 ;;
 
-let _pp_loc fmt (b, e)  =
+let pp_loc fmt loc  =
+  let b = loc.loc_start and e = loc.loc_end in
   let l = b.pos_lnum in
   let fc = b.pos_cnum - b.pos_bol + 1 in
   let lc = e.pos_cnum - b.pos_bol + 1 in

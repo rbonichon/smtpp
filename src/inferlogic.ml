@@ -125,11 +125,10 @@ module BasicInference (T : Theory.Theory) = struct
 end
 
 module UF = struct
-    exception FoundUF ;;
+    exception FoundUF of string;;
     open Ast_utils ;;
 
     let is_abstract sort =
-      Io.debug "is known %a@." Pp.pp_sort sort;
       let has_abstract_sortname (sortname : string) =
         match sortname with
         | "Int" | "Real" | "Bool" | "Array" | "BitVec" -> false
@@ -143,12 +142,20 @@ module UF = struct
      let check_command cmd =
        match cmd.command_desc with
        | CmdDeclareFun (_, _, sorts, sort) ->
-          if List.length sorts > 0 then raise FoundUF
-          else if is_abstract sort then raise FoundUF;
-       | CmdDefineFun _
-       | CmdDefineFunRec _ -> raise FoundUF;
+          if List.length sorts > 0 then
+            let msg = Utils.sfprintf "declare-fun %a" Pp.pp_loc cmd.command_loc
+            in raise (FoundUF msg)
+          else if is_abstract sort then
+            let msg = Utils.sfprintf "abstract-sort %a" Pp.pp_loc sort.sort_loc
+            in raise (FoundUF msg);
+(*       | CmdDefineFun _
+       | CmdDefineFunRec _ ->
+          let msg = Utils.sfprintf "define-fun %a" Pp.pp_loc cmd.command_loc in
+          raise (FoundUF msg);
+ *)
        | CmdDeclareConst (_, sort) ->
-          if is_abstract sort then raise FoundUF;
+          let msg = Utils.sfprintf "abstract-sort %a" Pp.pp_loc sort.sort_loc in
+          if is_abstract sort then raise (FoundUF msg);
        | _ -> ()
     ;;
 
@@ -156,7 +163,7 @@ module UF = struct
       try
         List.iter check_command s.script_commands;
         false
-      with FoundUF -> true
+      with FoundUF msg -> Io.debug "UF : %s@." msg; true
     ;;
 end
 
@@ -336,20 +343,24 @@ module ArithmeticCheck = struct
       | TermSpecConstant _ -> r
       | TermQualIdentifier qid -> check_qual_identifier r qid
       | TermQualIdentifierTerms (qid, terms) ->
-         let id = Ast_utils.id_from_qid qid in
-         let r =
-           if Theory.CommonArithmetics.is_multiplication id &&
-                Utils.has_more_than 1 Ast_utils.is_variable_term terms
-           then begin
-             Io.debug "Non-linear multiplication detected on %a@."
-                      Pp.pp_term term;
-             (* We have identified a case of multiplication which has more than
-              * one variable *)
-             { r with kind = Some NonLinear; }
-             end
-           else r
-         in
-         List.fold_left check_term (check_qual_identifier r qid) terms
+         begin
+           match r.kind with
+           | Some NonLinear -> r
+           | _ ->
+              let id = Ast_utils.id_from_qid qid in
+              let r =
+                if Theory.CommonArithmetics.is_multiplication id &&
+                     Utils.has_more_than 1 Ast_utils.is_variable_term terms
+                then begin
+                    Io.debug "Non-linear multiplication detected on %a@."
+                             Pp.pp_term term;
+                    (* We have identified a case of multiplication which has more than
+                     * one variable *)
+                    { r with kind = Some NonLinear; }
+                  end
+                else r
+              in List.fold_left check_term (check_qual_identifier r qid) terms
+         end
       | TermLetTerm (vbindings, term) ->
          List.fold_left check_var_binding (check_term r term) vbindings
       | TermForallTerm (svars, term)

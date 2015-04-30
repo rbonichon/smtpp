@@ -1,3 +1,6 @@
+val pp_loc : Format.formatter -> Locations.t -> unit ;;
+(** pretty-prints a location *)
+
 val pp_symbol : Format.formatter -> Ast.symbol -> unit ;;
 (** pretty-prints a SMT symbol *)
 
