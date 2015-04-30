@@ -93,6 +93,14 @@ let pp_time fmt (tm : Unix.tm) =
                  tm.tm_year tm.tm_mon tm.tm_mday tm.tm_hour tm.tm_min
 ;;
 
+let exn_to_string e =
+  match e with
+  | Stack_overflow -> "stack overflow"
+  | Parser.Error -> "parse error"
+  | Lexer.LexError _ -> "lex error"
+  | _ -> "unknown error"
+;;
+
 let mk_tests testname dir pre_tests do_test post_tests =
   create_log_file testname dir ();
   let basedir = Filename.basename dir in
@@ -104,6 +112,7 @@ let mk_tests testname dir pre_tests do_test post_tests =
                        ~~~@ BEGIN %s %a@ " testname pp_time time;
   List.iter
     (fun f ->
+     Io.log "%s@." f;
      let lexbuf, close = Do_parse.lex_file f in
      current_file := f;
      begin
@@ -112,9 +121,13 @@ let mk_tests testname dir pre_tests do_test post_tests =
          let ext_script = Extended_ast.load_theories script in
          do_test ext_script;
        with
-       | _ -> (Format.fprintf !fmt "@[<hov 0>%s : ERROR@]@ "
-                              (chop_path_prefix !smt_directory !current_file);
-               incr errors;)
+       | e -> 
+          (Format.fprintf
+             !fmt "@[<hov 0>%s : ERROR (%s)@]@ "
+             (chop_path_prefix !smt_directory !current_file)
+             (exn_to_string e) ;
+           Io.log "error@.";
+            incr errors ;)
      end;
      close ();
     ) (Config.get_files ());
