@@ -33,9 +33,11 @@ OTHERFILES = $(PARSER:%=%.mly) $(LEXER=%=%.mll)
 SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
 	$(MLFILES_TRANS:%=%.ml) \
 	$(MLFILES_POST:%=%.ml) \
-	$(MLIFILES:%=%.mli)
+	$(MLIFILES:%=%.mli) \
+	$(MAIN:%=%.ml) \
+	$(TESTMAIN:%=%.ml) 
 SRCFILES = $(SRCMLFILES) $(OTHERFILES)
-GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
+GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml) 
 CAMLFILES = $(SRCMLFILES) $(GENFILES)
 
 CORE_CMXFILES = $(MLFILES_PRE:%=%.cmx) \
