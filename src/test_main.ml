@@ -139,7 +139,7 @@ let mk_tests testname dir pre_tests do_test post_tests =
     ) (Config.get_files ());
   Format.fprintf !fmt "END@ ~~~@]@.@.";
   post_tests ();
-  Format.fprintf !fmt "Errors : %d@.@." !errors;
+  Format.fprintf !fmt "* **Errors** : %d@.@." !errors;
   Format.pp_print_flush !fmt ();
   close_log ()
 ;;
@@ -201,14 +201,13 @@ let init_test_detection, test_detection , end_test_detection =
       * Over : %d@ \
       * Under : %d@ \
       * OverUnder : %d@ \
-      * **By categories** :@ \
-        @[<v 0>%a@] \
+      * @[<v 4>**By categories** :@ %a@] \
       @]@.\
       "
      !alerts !ntests !over !under !both
      (fun fmt h ->
       Hashtbl.iter
-        (fun k v -> Format.fprintf fmt "  * %a : %d@ " Logic.pp_from_core k v)
+        (fun k v -> Format.fprintf fmt "* %a : %d@ " Logic.pp_from_core k v)
         h
      ) h;
   )
