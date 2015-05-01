@@ -114,7 +114,7 @@ module BasicInference (T : Theory.Theory) = struct
     let use_theory (s : Ast.script) =
       try check_script s; false with
         Detected loc ->
-        Io.debug "%s : detected at %a" T.name Pp.pp_loc loc;
+        Io.debug "%s : detected at %a@." T.name Pp.pp_loc loc;
         true ;;
 end
 
@@ -125,12 +125,17 @@ module UF = struct
     let is_abstract sort =
       let has_abstract_sortname (sortname : string) =
         match sortname with
-        | "Int" | "Real" | "Bool" | "Array" | "BitVec" -> false
+        | "Int" | "Real"
+        | "Bool"
+        | "Array" | "BitVec"
+        | "Index" | "Element" -> false
         | _ -> true
       in
-      List.exists
-        (fun symbol -> has_abstract_sortname (string_of_symbol symbol))
-        (symbols_of_sort sort)
+      let sort_symbols = symbols_of_sort sort in
+      match sort_symbols with
+      | sortsymbol :: _sortnames ->
+         has_abstract_sortname (string_of_symbol sortsymbol)
+      | [] -> assert false
      ;;
 
      let check_command cmd =

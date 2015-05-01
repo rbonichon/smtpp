@@ -39,7 +39,7 @@ let symbols_of_sort (sort : Ast.sort) : Ast.symbol list =
     | SortIdentifier id -> (symbol_from_id id) :: symbols
     | SortFun (id, sorts) ->
        List.fold_left aux ((symbol_from_id id) :: symbols) sorts
-  in aux [] sort
+  in List.rev (aux [] sort) 
 ;;
 
 let string_of_symbol (symbol : Ast.symbol) : string =
