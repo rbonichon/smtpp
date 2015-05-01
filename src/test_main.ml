@@ -239,7 +239,7 @@ let init_test_use_def, test_use_def, end_test_use_def =
        !fmt "%d. @[<v 0>%s@ @ %a@]@."
        !alerts
        (chop_path_prefix !smt_directory !current_file)
-       Undef_unused.pp_result uures
+       Undef_unused.pp_uu uures
      end;
    if has_unused then incr nunused ;
    if has_undef then incr nundef;
