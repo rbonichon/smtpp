@@ -229,8 +229,12 @@ let init_test_detection, test_detection , end_test_detection =
 ;;
 
 let grep_count name file =
-  let regexp = "\\([ ]\\+\\|[ ]*)\\)" in
-  let command = Format.sprintf "grep -c \"%s%s\" %s" name regexp file in
+  (* When greping a name in a file, we must take care in not counting
+   * neq_unit when looking for eq_unit or equals when looking for equal.
+   * In SMT-LIB, this means there is at least one space or a parenthesis before
+   * and a space or a parenthesis after the name.
+   *)
+  let command = Format.sprintf "grep -c \"[( ]%s[ )]\" %s" name file in
   let ic = Unix.open_process_in command in
   let n = int_of_string (input_line ic) in
   ignore(Unix.close_process_in ic);
