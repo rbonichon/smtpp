@@ -228,18 +228,29 @@ let init_test_detection, test_detection , end_test_detection =
   )
 ;;
 
+let grep_count name file =
+  let regexp = "\\([ ]\\+\\|[ ]*)\\)" in
+  let command = Format.sprintf "grep -c \"%s%s\" %s" name regexp file in
+  let ic = Unix.open_process_in command in
+  let n = int_of_string (input_line ic) in
+  ignore(Unix.close_process_in ic);
+  n
+;;
+
 let init_test_use_def, test_use_def, end_test_use_def =
   let base_link = "uu" in
   let alerts = ref 0 in
   let ntests = ref 0 in
   let nunused = ref 0 in
+  let with_errors = ref 0 in
   let nundef = ref 0 in
   let link = ref base_link in
   (fun header ->
    ntests := 0;
-   alerts := 0;
+    alerts := 0;
    nundef := 0;
    nunused := 0;
+   with_errors := 0;
    link := Format.sprintf "#%s%s" base_link header;
    Format.fprintf !fmt "## %s : undef/unused {#%s}@." header !link;
    Format.fprintf !fmt "### Raw results@.@."
@@ -253,27 +264,47 @@ let init_test_use_def, test_use_def, end_test_use_def =
    if has_unused || has_undef then begin
      incr alerts;
      Format.fprintf
-       !fmt "%d. @[<v 0>%s@ @ %a@]@."
+       !fmt "%d. @[<v 4>%s@ @ %a@ "
        !alerts
        (chop_path_prefix !smt_directory !current_file)
        Undef_unused.pp_uu uures
      end;
+   if has_unused then begin
+       let check_unused =
+         SymbolSet.fold
+           (fun symb l ->
+            let vname = Ast_utils.string_of_symbol symb in
+            let n = grep_count vname !current_file in
+            if n > 1 then vname :: l
+            else l
+           ) unused []
+       in
+       if check_unused <> [] then
+         begin
+           Format.fprintf !fmt "@[<hov 4>**Double-check unused**@ ";
+           List.iter (fun name -> Format.fprintf !fmt "%s;@ " name) check_unused;
+           Format.fprintf !fmt "@]@.";
+           incr with_errors;
+         end;
+     end;
+   Format.fprintf !fmt "@]@.";
    if has_unused then incr nunused ;
    if has_undef then incr nundef;
   ),
   (fun header ->
    Format.fprintf
-     !fmt
+     !summary_fmt
      "@[<v 0>\
       ### %s : summary of uu detection@ \
       * Alerts : %d / %d@ \
       * With unused : %d@ \
       * With undefined : %d@ \
+      * With double-checks: %d@ \
       %a@ \
       @]@.\
       "
      header
-     !alerts !ntests !nunused !nundef
+     !alerts !ntests !nunused !nundef !with_errors
      (link_to !link) header
   )
 ;;
