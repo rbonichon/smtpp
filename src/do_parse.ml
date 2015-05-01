@@ -20,8 +20,11 @@ open Lexing;;
 let report_error l  =
   let pos = lexeme_start_p l in
   let o = pos.pos_cnum - pos.pos_bol in
-  Format.eprintf "Error in file %s, line %d, column %d@."
-                 pos.pos_fname pos.pos_lnum o;
+  Format.eprintf
+    "Error in file %s, line %d, column %d %s@."
+    pos.pos_fname pos.pos_lnum o
+    l.lex_buffer
+  ;
 ;;
 
 let lex_file fname =

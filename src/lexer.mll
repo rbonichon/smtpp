@@ -77,6 +77,8 @@ let reset_string_buffer () =
 
 let store_string_char c = Buffer.add_char string_buffer c
 
+let store_string str = Buffer.add_string string_buffer str
+
 let get_stored_string () =
   let s = Buffer.contents string_buffer in
   reset_string_buffer ();
@@ -143,19 +145,19 @@ rule token = parse
         try Hashtbl.find reserved_table s
         with Not_found -> SYMBOL s
       }
-  | '|' ([^ '|' '\\']* as s) '|'
-        { QUOTEDSYMBOL s }
+ | '|' ([^ '|' '\\']* as s) '|' {
+       for i = 0 to String.length s - 1 do
+           if s.[i] = '\n' then Lexing.new_line lexbuf;
+       done;
+       QUOTEDSYMBOL s }
   | eof       { EOF }
   | _
       { let msg = sprintf "@[Bad character %c@]" (Lexing.lexeme_char lexbuf 0) in
         raise (LexError msg);
       }
-
 and string = parse
-            | "\"\""
-      { store_string_char '"';
-                string lexbuf;
-              }
+  | "\"\""
+      { store_string_char '"'; string lexbuf; }
   | '"'
       { () }
   | '\\' newline ([' ' '\t'] * as space)
