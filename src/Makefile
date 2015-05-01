@@ -57,7 +57,7 @@ CMOFILES_LIB = $(CMXFILES_LIB:%.cmx=%.cmo)
 CMIFILES = $(MLIFILES:%=%.cmi)
 CMXFILES = $(CORE_CMXFILES) $(MAIN:%=%.cmx)
 CMOFILES = $(CMXFILES:%.cmx=%.cmo)
-CMXFILES_TEST = $(CMXFILES) $(TESTMAIN:%=%.cmx)
+CMXFILES_TEST = $(CORE_CMXFILES) $(TESTMAIN:%=%.cmx)
 CFILES = libwrap
 CSRC = $(CFILES:%=%.c)
 COBJS = $(CFILES:%=%.o)
