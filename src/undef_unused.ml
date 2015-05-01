@@ -209,17 +209,17 @@ let eval_commands vs cmds =
   List.fold_left eval_command vs cmds
 ;;
 
-let apply (script: Extended_ast.script) =
+let apply (script: Extended_ast.ext_script) =
   let theory_defined =
     List.fold_left
       (fun s (name, _) -> SymbolSet.add (Ast_utils.mk_symbol name) s)
-      SymbolSet.empty script.script_theory.theory_symbols
+      SymbolSet.empty script.ext_script_theory.theory_symbols
   in
   let vstate = { empty_vstate with theory_defined; } in
-  let vs = eval_commands vstate script.script_commands in
+  let vs = eval_commands vstate script.ext_script_commands in
   compute_uu vs
 ;;
 
-let apply_and_pp (script : Extended_ast.script) =
+let apply_and_pp (script : Extended_ast.ext_script) =
   Format.printf "%a@." pp_uu (apply script)
 ;;

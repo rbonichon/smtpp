@@ -16,7 +16,7 @@ val pp_qual_identifier : Format.formatter -> Ast.qual_identifier -> unit ;;
 val pp: Format.formatter -> Ast.script -> unit ;;
 (** [pp fmt ast] pretty-prints a full SMT-LIB script onto a formatter *)
 
-val pp_extended: Format.formatter -> Extended_ast.script -> unit ;;
+val pp_extended: Format.formatter -> Extended_ast.ext_script -> unit ;;
 (** [pp_extended fmt ast] pretty-prints a full SMT-LIB script onto a formatter *)
 
 val pp_commands: Format.formatter -> Ast.commands -> unit ;;

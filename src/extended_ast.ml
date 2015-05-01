@@ -17,20 +17,20 @@
 
 open Logic ;;
 
-type script = {
-    script_commands : Ast.commands ;
-    script_loc : Locations.t ;
-    script_theory : Theory.t ;
+type ext_script = {
+    ext_script_commands : Ast.commands ;
+    ext_script_loc : Locations.t ;
+    ext_script_theory : Theory.t ;
   }
 ;;
 
-let to_ast_script (s : script) =
-  { Ast.script_commands = s.script_commands;
-    Ast.script_loc = s.script_loc;
+let to_ast_script (s : ext_script) =
+  { Ast.script_commands = s.ext_script_commands;
+    Ast.script_loc = s.ext_script_loc;
   }
 ;;
 
-let load_theories (s : Ast.script) : script =
+let load_theories (s : Ast.script) : ext_script =
   let theory = ref Theory.SMTCore.theory in
   let add_theory (th : Theory.t) =
     theory := Theory.combine !theory th;
@@ -45,8 +45,30 @@ let load_theories (s : Ast.script) : script =
    | Some Mixed -> add_theory Theory.SMTNumerics.theory
    | None -> ()
   );
-  { script_commands = s.Ast.script_commands;
-    script_loc = s.Ast.script_loc;
-    script_theory = !theory;
+  { ext_script_commands = s.Ast.script_commands;
+    ext_script_loc = s.Ast.script_loc;
+    ext_script_theory = !theory;
   }
+;;
+
+let set_logic (logic : Logic.t) (ext_script : ext_script) : ext_script =
+  let open Ast in
+  let logic_name = Utils.sfprintf "%a" Logic.pp_from_core logic in
+  match ext_script.ext_script_commands with
+  | [] -> ext_script
+  | { command_desc = CmdSetLogic sy; command_loc; } :: cmds ->
+     let logic_symbol =
+       Ast_utils.mk_localized_symbol logic_name sy.symbol_loc in
+     { ext_script
+     with ext_script_commands =
+            { command_desc = CmdSetLogic logic_symbol; command_loc }
+            :: cmds }
+  | cmds ->
+     let logic_symbol =
+       Ast_utils.mk_localized_symbol logic_name Locations.dummy_loc in
+      { ext_script
+      with ext_script_commands =
+             { command_desc = CmdSetLogic logic_symbol;
+               command_loc = Locations.dummy_loc }
+            :: cmds }
 ;;

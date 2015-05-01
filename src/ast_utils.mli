@@ -9,9 +9,11 @@ val symbol_of_vbinding : Ast.var_binding -> Ast.symbol ;;
 
 val symbols_of_sort : Ast.sort ->  Ast.symbol list ;;
 val string_of_symbol : Ast.symbol -> string ;;
-  
+
 val mk_symbol : string -> Ast.symbol ;;
   (** [mk_symbol name] creates a dummy symbol for name *)
+
+val mk_localized_symbol : string -> Locations.t -> Ast.symbol ;;
 
 val get_logic : Ast.script -> string ;;
   (** Extracts the logic name from a SMT script *)

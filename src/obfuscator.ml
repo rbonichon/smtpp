@@ -236,12 +236,12 @@ let obfuscate_command cmd =
 
 let obfuscate_commands cmds = List.map obfuscate_command cmds ;;
 
-let apply (script : Extended_ast.script) =
-  let theory_keeps = List.map fst script.script_theory.theory_symbols in
+let apply (script : Extended_ast.ext_script) =
+  let theory_keeps = List.map fst script.ext_script_theory.theory_symbols in
   let keep = (Config.get_keep_symbols ()) @ theory_keeps in
   SymbHash.init ~keep (); (* Init hash table with symbols that should be kept *)
-  let script_commands = obfuscate_commands script.script_commands in
-  let obfuscated_script = { script with script_commands } in
+  let ext_script_commands = obfuscate_commands script.ext_script_commands in
+  let obfuscated_script = { script with ext_script_commands } in
   printf "%a" Pp.pp_extended obfuscated_script;
   if Config.get_debug () then
     printf "@[<v 0>%a@ %a@]"

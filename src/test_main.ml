@@ -54,6 +54,8 @@ and fmt = ref Format.std_formatter
 and current_file = ref ""
 ;;
 
+let summary_fmt = ref Format.std_formatter ;;
+
 let chop_path_prefix path1 path2 =
   let rec aux basenames dirname =
     Io.debug "%s@." dirname;
@@ -99,6 +101,10 @@ let pp_time fmt (tm : Unix.tm) =
                  tm.tm_year tm.tm_mon tm.tm_mday tm.tm_hour tm.tm_min
 ;;
 
+let link_to link fmt s =
+  Format.fprintf fmt "More details at [%s](%s)." s link
+;;
+
 let exn_to_string e =
   match e with
   | Stack_overflow -> "stack overflow"
@@ -109,9 +115,8 @@ let exn_to_string e =
 
 let mk_tests testname dir pre_tests do_test post_tests =
   create_log_file testname dir ();
-  let basedir = Filename.basename dir in
-  Format.fprintf !fmt "## %s@." basedir;
-  pre_tests ();
+  let header = Filename.basename dir in
+  pre_tests header;
   let errors = ref 0 in
   let time = Unix.gmtime (Unix.time ()) in
   Format.fprintf !fmt "@[<v 0>@ \
@@ -138,26 +143,31 @@ let mk_tests testname dir pre_tests do_test post_tests =
      close ();
     ) (Config.get_files ());
   Format.fprintf !fmt "END@ ~~~@]@.@.";
-  post_tests ();
+  post_tests header;
   Format.fprintf !fmt "* **Errors** : %d@.@." !errors;
   Format.pp_print_flush !fmt ();
   close_log ()
 ;;
 
 let init_test_detection, test_detection , end_test_detection =
+  let base_link = "td" in
   let h = Hashtbl.create 7 in
   let ntests = ref 0 in
   let alerts = ref 0 in
   let over = ref 0 in
   let under = ref 0 in
   let both = ref 0 in
-  (fun () ->
+  let link = ref "" in
+  (fun header ->
    Hashtbl.reset h;
    ntests := 0;
    over := 0;
    under := 0;
    both := 0;
    alerts := 0;
+   link := Format.sprintf "#%s%s" base_link header;
+   Format.fprintf !summary_fmt "## %s@." header;
+   Format.fprintf !fmt "## %s : logic {%s}@." header !link;
    Format.fprintf !fmt "### Raw results@.@."
   ),
   (fun s ->
@@ -182,7 +192,7 @@ let init_test_detection, test_detection , end_test_detection =
          let v = Hashtbl.find h detected_logic in
          Hashtbl.replace h detected_logic (succ v)
          with Not_found -> Hashtbl.add h detected_logic 1);
-       Io.debug "Registerd htbl@.";
+       Io.debug "Registered htbl@.";
        (match Logic.one_bigger_dimension detected_logic declared_logic,
               Logic.one_bigger_dimension declared_logic detected_logic
         with
@@ -192,39 +202,46 @@ let init_test_detection, test_detection , end_test_detection =
         | false, false -> assert false);
      end
   ),
-  (fun () ->
+  (fun header ->
    Format.fprintf
-     !fmt
+     !summary_fmt
      "@[<v 0>\
-      ### Summary of detection@ \
+      ### %s : summary of logic detection@ \
       * Alerts : %d / %d@ \
       * Over : %d@ \
       * Under : %d@ \
       * OverUnder : %d@ \
       * @[<v 4>**By categories** :@ %a@] \
-      @]@.\
+      @ \
+      %a\
+      @]@.@.\
       "
+     header
      !alerts !ntests !over !under !both
      (fun fmt h ->
       Hashtbl.iter
         (fun k v -> Format.fprintf fmt "* %a : %d@ " Logic.pp_from_core k v)
         h
-     ) h;
+     ) h
+     (link_to !link) header
+   ;
   )
 ;;
 
-
-
 let init_test_use_def, test_use_def, end_test_use_def =
+  let base_link = "uu" in
   let alerts = ref 0 in
   let ntests = ref 0 in
   let nunused = ref 0 in
   let nundef = ref 0 in
-  (fun () ->
+  let link = ref base_link in
+  (fun header ->
    ntests := 0;
    alerts := 0;
    nundef := 0;
    nunused := 0;
+   link := Format.sprintf "#%s%s" base_link header;
+   Format.fprintf !fmt "## %s : undef/unused {#%s}@." header !link;
    Format.fprintf !fmt "### Raw results@.@."
   ),
   (fun s ->
@@ -244,17 +261,20 @@ let init_test_use_def, test_use_def, end_test_use_def =
    if has_unused then incr nunused ;
    if has_undef then incr nundef;
   ),
-  (fun () ->
+  (fun header ->
    Format.fprintf
      !fmt
      "@[<v 0>\
-      ### Summary of detection@ \
+      ### %s : summary of uu detection@ \
       * Alerts : %d / %d@ \
       * With unused : %d@ \
       * With undefined : %d@ \
+      %a@ \
       @]@.\
       "
+     header
      !alerts !ntests !nunused !nundef
+     (link_to !link) header
   )
 ;;
 
@@ -301,7 +321,13 @@ let main () =
         end);
       Filename.set_temp_dir_name !output_directory;
     end;
-
+  let sbname = "prelude.md" in
+  let fname_summary =
+    if !output_directory = "" then sbname
+    else Filename.concat !output_directory sbname in
+  let sum_oc = open_out fname_summary in
+  summary_fmt := Format.formatter_of_out_channel sum_oc;
+  Format.fprintf !summary_fmt "# Summary of results@.";
   if !smt_directory <> "" then
     begin
       let len = String.length !smt_directory in
@@ -317,7 +343,10 @@ let main () =
         )
         smtdirs;
     end
-  else execute_tests_on_files ()
+  else execute_tests_on_files ();
+    Format.fprintf !summary_fmt "# Detailed results@.";
+  Format.pp_print_flush !summary_fmt ();
+  close_out sum_oc;
 ;;
 
 main ()

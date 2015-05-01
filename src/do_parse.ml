@@ -52,11 +52,18 @@ let apply () =
     let script = Parser.script Lexer.token lexbuf in
     let ext_script = Extended_ast.load_theories script in
     if Config.get_unused () then Undef_unused.apply_and_pp ext_script;
-    if Config.get_detect () then Inferlogic.detect_and_print script;
+
+    let ext_script = 
+      if Config.get_detect () then
+        Extended_ast.set_logic
+          (Inferlogic.detect_and_print script)
+          ext_script
+      else ext_script
+    in
     if Config.get_pushpop () then Pushpop.apply script;
+    if Config.get_obfuscate () then Obfuscator.apply ext_script;
     if Config.get_reprint () then Pp.pp Format.std_formatter script;
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
-    if Config.get_obfuscate () then Obfuscator.apply ext_script;
     close ();
   with
   | Lexer.LexError msg ->

@@ -178,7 +178,9 @@ let parse_logic (smt_logic : string) =
 ;;
 
 
-(* List of logics know and defined by SMT-LIB *)
+(* List of logics know and defined by SMT-LIB 
+ * Only for test purposes.
+*)
 let smt_logics =
   let qf_suffixes =
     [ "AX"; "IDL"; "UF"; "BV"; "RDL"; "LIA"; "UFIDL"; "UFBV"; "LRA"; "NIA";

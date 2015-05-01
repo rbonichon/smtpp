@@ -423,15 +423,10 @@ module ArithmeticCheck = struct
     ;;
 
     let check_script (s : Ast.script) =
-      let arith =
         List.fold_left
           (fun r cmd -> check_command r cmd)
           { has_int = False; has_real = False; kind = None;}
           s.script_commands
-      in  if (arith.has_int <> False || arith.has_real <> False)
-             && arith.kind = None
-          then { arith with kind = Some NonLinear }
-          else arith
     ;;
 
     let arithmetic s =
@@ -439,10 +434,15 @@ module ArithmeticCheck = struct
       | { has_int = True; has_real = True; kind = Some Difference; }
         -> Some Mixed, Some Linear (* RIDL does not exists. Upgrade it to LIRA *)
       | { has_int = True; has_real = True; kind } -> (Some Mixed), kind
-      | { has_int = True; has_real = (Maybe | False) ; kind } ->
+      | { has_int = True; has_real = (Maybe | False) ; kind = Some _ as kind} ->
          (Some Integer), kind
-      | { has_int = (Maybe | False); has_real = True; kind } ->
+      | { has_int = True; has_real = (Maybe | False) ; kind = None } ->
+         Some Integer, Some Difference
+      | { has_int = (Maybe | False); has_real = True; kind = Some _ as kind } ->
          (Some Real), kind
+      | { has_int = (Maybe | False); has_real = True; kind = None } ->
+         (Some Real), Some Difference
+
       | { has_int = False; has_real = False; _ } -> None, None
       | _ -> assert false
     ;;
@@ -466,8 +466,9 @@ let detect_logic (s : Ast.script) =
 
 let detect_and_print (s : Ast.script) =
   let logic = detect_logic s in
-  Format.printf "Detected logic : %a (set by script at \"%s\")@."
+  Io.debug "Detected logic : %a (set by script at \"%s\")@."
                 pp_from_core logic
                 (Ast_utils.get_logic s)
   ;
+  logic
 ;;

@@ -39,7 +39,7 @@ let symbols_of_sort (sort : Ast.sort) : Ast.symbol list =
     | SortIdentifier id -> (symbol_from_id id) :: symbols
     | SortFun (id, sorts) ->
        List.fold_left aux ((symbol_from_id id) :: symbols) sorts
-  in List.rev (aux [] sort) 
+  in List.rev (aux [] sort)
 ;;
 
 let string_of_symbol (symbol : Ast.symbol) : string =
@@ -91,5 +91,11 @@ let is_variable_term (t : Ast.term) : bool =
 let mk_symbol (s:string) =
   { symbol_desc = SimpleSymbol s;
     symbol_loc = Locations.dummy_loc;
+  }
+;;
+
+let mk_localized_symbol (s : string) (symbol_loc : Locations.t) : Ast.symbol =
+  { symbol_desc = SimpleSymbol s;
+    symbol_loc;
   }
 ;;

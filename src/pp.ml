@@ -287,7 +287,7 @@ let pp fmt (s: Ast.script) =
   Format.set_max_indent 25;
   pp_commands fmt s.script_commands ;;
 
-let pp_extended fmt (s : Extended_ast.script) =
+let pp_extended fmt (s : Extended_ast.ext_script) =
   pp fmt (Extended_ast.to_ast_script s)
 ;;
 
