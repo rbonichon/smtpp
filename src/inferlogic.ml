@@ -19,19 +19,10 @@ open Ast ;;
 open Logic ;;
 
 module BasicInference (T : Theory.Theory) = struct
-    exception Detected ;;
-    open Utils ;;
-
-    let (sorts : StringSet.t), (functions : StringSet.t) =
-      Theory.all_symbol_strings T.theory
-    ;;
+    exception Detected of Locations.t ;;
 
     let check_symbol (sy : Ast.symbol) =
-      match sy.symbol_desc with
-      | SimpleSymbol name ->
-         if StringSet.mem name sorts || StringSet.mem name functions
-         then raise Detected
-      | QuotedSymbol _name -> ()
+      if T.mem sy then raise (Detected sy.symbol_loc);
     ;;
 
     let check_identifier (id : Ast.identifier) =
@@ -121,7 +112,10 @@ module BasicInference (T : Theory.Theory) = struct
     ;;
 
     let use_theory (s : Ast.script) =
-      try check_script s; false with Detected -> true ;;
+      try check_script s; false with
+        Detected loc ->
+        Io.debug "%s : detected at %a" T.name Pp.pp_loc loc;
+        true ;;
 end
 
 module UF = struct
@@ -302,16 +296,15 @@ module ArithmeticCheck = struct
               let kind =
                 try Logic.max_kind_opt (Some (StringMap.find sname kmap)) r.kind
                 with Not_found -> r.kind
-              in
-              { has_int; has_real; kind; }
+              in { has_int; has_real; kind; }
            | true, false ->
-              Io.debug "Int detected at %a@." Pp.pp_symbol symb;
+              Io.debug "Arith: int symbol at %a@." Pp.pp_loc symb.symbol_loc;
               let kind =
                 try Logic.max_kind_opt (Some (StringMap.find sname kmap)) r.kind
                 with Not_found -> r.kind in
               { r with has_int = True; kind; }
            | false, true ->
-              Io.debug "Real detected at %a@." Pp.pp_symbol symb;
+              Io.debug "Arith: real symbol at %a@." Pp.pp_loc symb.symbol_loc;
               let kind =
                 try Logic.max_kind_opt (Some (StringMap.find sname kmap)) r.kind
                 with Not_found -> r.kind in

@@ -42,20 +42,43 @@ let all_symbol_strings (t : t) : Utils.StringSet.t * Utils.StringSet.t =
   in sortset, StringSet.of_list (List.map fst t.theory_symbols)
 ;;
 
+module type TheoryDefinition = sig
+    val name : string ;;
+    val sorts : Sorts.t list ;;
+    val functions : (string * Sorts.t) list ;;
+  end
+;;
+
 module type Theory = sig
+    val name : string ;;
     val theory : t ;;
+    val mem : Ast.symbol -> bool ;;
 end
+
+module Make(TDef : TheoryDefinition) : Theory = struct
+    let name = TDef.name ;;
+    let theory = mk_theory TDef.sorts TDef.functions ;;
+    let sortnames, function_names = all_symbol_strings theory ;;
+    let mem (sy : Ast.symbol) =
+      let symbol_name = Ast_utils.string_of_symbol sy in
+      StringSet.mem symbol_name sortnames
+      || StringSet.mem symbol_name function_names
+    ;;
+  end
+
 
 module EmptyTheory = struct
     let theory = { theory_symbols = []; theory_sorts = []; } ;;
 end
 
-module SMTCore = struct
+(** Definition for SMT Core *)
+module SMTCoreDefinition = struct
+    let name = "Core" ;;
     let sorts = [ bool_sort; ] ;;
 
     let boolbool_bool_fun = xx_y_fun bool_sort bool_sort ;;
 
-    let symbols =
+    let functions =
       ["true"    , bool_sort ;
        "false"   , bool_sort ;
        "not"     , x_y_fun bool_sort bool_sort;
@@ -68,11 +91,12 @@ module SMTCore = struct
        "ite"     , let v = mk_var () in mk_fun [bool_sort; v; v;] v;
       ]
     ;;
-
-    let theory = mk_theory sorts symbols ;;
 end
 
-module type Arithmetics = sig
+module SMTCore = Make(SMTCoreDefinition) ;;
+
+(** Definition for various types of arithmetic *)
+ module type Arithmetics = sig
     val base_sort : Sorts.t ;;
     val local_binary_arith_ops : (string * Logic.arith_kind) list ;;
     val local_unary_arith_ops : string list ;;
@@ -162,10 +186,12 @@ module SMTNumerics = struct
     ;;
 end
 
-module SMTBitVectors = struct
+(** BitVectors *)
+module SMTBitVectorsDefinition = struct
+    let name = "BitVectors" ;;
     let sorts = [ bitvector_sort ] ;;
 
-    let symbols = [
+    let functions = [
         "bvand", unit_sort;
         "bvnand", unit_sort;
         "bvor", unit_sort;
@@ -198,26 +224,20 @@ module SMTBitVectors = struct
         "bv0", unit_sort;
       ]
     ;;
-
-    let theory =
-      { theory_symbols = symbols;
-        theory_sorts = sorts;
-      }
-    ;;
 end
 
-module SMTArray = struct
+module SMTBitVectors = Make(SMTBitVectorsDefinition) ;;
+
+(** Array *)
+module SMTArrayDefinition = struct
+    let name = "Array" ;;
     let sorts = [ array_sort;  ] ;;
 
-    let symbols =
+    let functions =
       [ "select", unit_sort;
         "store", unit_sort;
       ]
     ;;
-
-    let theory =
-      { theory_symbols = symbols;
-        theory_sorts = sorts;
-      }
-    ;;
 end
+
+module SMTArray = Make(SMTArrayDefinition) ;;
