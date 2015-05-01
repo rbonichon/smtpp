@@ -72,8 +72,6 @@ let sfprintf fmt =
   Format.kfprintf return (Format.formatter_of_buffer b) fmt
 ;;
 
-let third (_, _, z) = z ;;
-
 (* Extract the substring from [beg_idx] to [end_idx included from [s] *)
 let string_extract s beg_idx end_idx =
   String.sub s beg_idx (end_idx - beg_idx + 1)

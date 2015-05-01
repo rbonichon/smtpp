@@ -10,6 +10,9 @@ val pp_sort : Format.formatter -> Ast.sort -> unit ;;
 val pp_term : Format.formatter -> Ast.term -> unit ;;
 (** pretty-prints a SMT term *)
 
+val pp_qual_identifier : Format.formatter -> Ast.qual_identifier -> unit ;;
+(** pretty-prints a SMT qualified identifier *)
+
 val pp: Format.formatter -> Ast.script -> unit ;;
 (** [pp fmt ast] pretty-prints a full SMT-LIB script onto a formatter *)
 

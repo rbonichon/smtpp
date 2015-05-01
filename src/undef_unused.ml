@@ -52,6 +52,36 @@ let use vs sy =
   { vs with used = SymbolSet.add sy vs.used; }
 ;;
 
+let compute_uu (vs : varstate) =
+  let unused = SymbolSet.diff vs.user_defined vs.used in
+  let undefined =
+    SymbolSet.diff vs.used (SymbolSet.union vs.user_defined vs.theory_defined)
+  in unused, undefined
+;;
+
+let ppset fmt (s : SymbolSet.t) =
+  SymbolSet.iter (fun s -> Format.fprintf fmt "%a;@ " Pp.pp_symbol s) s
+;;
+
+let pp_uu fmt (unused, undef) =
+  Format.fprintf fmt "@[<v 0>";
+  if not (SymbolSet.is_empty unused) then
+    begin
+      Format.fprintf fmt
+        "@[<v 2>%a@ %a@]@ "
+        Utils.mk_header "Unused symbols"
+        ppset unused
+    end;
+  if not (SymbolSet.is_empty undef) then
+    begin
+      Format.fprintf fmt
+        "@[<v 2>%a@ %a@]"
+        Utils.mk_header "Undef symbols"
+        ppset undef
+    end;
+  Format.fprintf fmt "@]";
+;;
+
 let pp_symbols fmt (sys : SymbolSet.t) =
   SymbolSet.iter
     (fun sy -> Format.fprintf fmt "%a;@ " Pp.pp_symbol sy) sys
@@ -87,6 +117,7 @@ let rec eval_term (vs: varstate) (t: Ast.term) =
   | TermQualIdentifier qid -> eval_qual_identifier vs qid
   | TermQualIdentifierTerms (qid, terms) ->
      eval_qual_identifier (eval_terms vs terms) qid
+
   | TermLetTerm (vbindings, term) ->
      let vsbindings = List.fold_left eval_var_binding empty_vstate vbindings in
      let vs' = { vs with
@@ -100,7 +131,9 @@ let rec eval_term (vs: varstate) (t: Ast.term) =
        Format.printf
          "@[<v 0>Unused bounded variables: @[<hov 0>%a@]@]@."
          pp_symbols unused_bindings;
-     { vs with used = SymbolSet.union outside_used vsbindings.used; }
+     { vs with used = SymbolSet.union 
+                        vs.used 
+                        (SymbolSet.union outside_used vsbindings.used); }
   | TermForallTerm (svars, term)
   | TermExistsTerm (svars, term) ->
      let new_symbols = svar_set svars in
@@ -138,6 +171,9 @@ let eval_fundef (vs : varstate) (f : Ast.fun_def) =
 ;;
 
 let eval_command (vs : varstate) (cmd : Ast.command) =
+  Io.debug "@[<hov 0>Used variables(%a): %a@]@."
+           Pp.pp_loc cmd.command_loc
+           pp_symbols vs.used;
   match cmd.command_desc with
   | CmdAssert t -> eval_term vs t
   | CmdDeclareConst (sy, _)
@@ -181,36 +217,9 @@ let apply (script: Extended_ast.script) =
   in
   let vstate = { empty_vstate with theory_defined; } in
   let vs = eval_commands vstate script.script_commands in
-  let unused = SymbolSet.diff vs.user_defined vs.used in
-  let undefined =
-    SymbolSet.diff vs.used (SymbolSet.union vs.user_defined vs.theory_defined)
-  in unused, undefined
-;;
-
-
-let ppset fmt (s : SymbolSet.t) =
-  SymbolSet.iter (fun s -> Format.fprintf fmt "%a;@ " Pp.pp_symbol s) s
-;;
-
-let pp_result fmt (unused,undef) =
-  Format.fprintf fmt "@[<v 0>";
-  if not (SymbolSet.is_empty unused) then
-    begin
-      Format.fprintf fmt
-        "@[<v 2>%a@ %a@]@ "
-        Utils.mk_header "Unused symbols"
-        ppset unused
-    end;
-  if not (SymbolSet.is_empty undef) then
-    begin
-      Format.fprintf fmt
-        "@[<v 2>%a@ %a@]"
-        Utils.mk_header "Undef symbols"
-        ppset undef
-    end;
-  Format.fprintf fmt "@]";
+  compute_uu vs
 ;;
 
 let apply_and_pp (script : Extended_ast.script) =
-  Format.printf "%a@." pp_result (apply script)
+  Format.printf "%a@." pp_uu (apply script)
 ;;

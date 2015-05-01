@@ -129,7 +129,7 @@ let mk_tests testname dir pre_tests do_test post_tests =
        with
        | e ->
           (Format.fprintf
-             !fmt "@[<hov 0>%s : ERROR (%s)@]@ "
+             !fmt "@[<v 4>%s@ ERROR (%s)@]@ "
              (chop_path_prefix !smt_directory !current_file)
              (exn_to_string e) ;
            Io.log "error@.";
@@ -172,7 +172,7 @@ let init_test_detection, test_detection , end_test_detection =
        Io.debug "Printing@.";
        Format.fprintf
          !fmt
-         "@[<hov 0>%d. %s : %a (declared), %a (detected)@]@ "
+         "@[<v 4>%d. %s@ %a (declared), %a (detected)@]@ "
          !alerts
          (chop_path_prefix !smt_directory !current_file)
          Logic.pp_from_core declared_logic
