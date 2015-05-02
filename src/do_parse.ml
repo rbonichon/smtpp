@@ -51,6 +51,7 @@ let apply () =
   try
     let script = Parser.script Lexer.token lexbuf in
     let ext_script = Extended_ast.load_theories script in
+    Io.debug "Parsing and elaboration done@.";
     if Config.get_unused () then Undef_unused.apply_and_pp ext_script;
 
     let ext_script = 

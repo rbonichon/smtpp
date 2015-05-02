@@ -58,12 +58,10 @@ let summary_fmt = ref Format.std_formatter ;;
 
 let chop_path_prefix path1 path2 =
   let rec aux basenames dirname =
-    Io.debug "%s@." dirname;
     if String.compare dirname path1 = 0
        || String.compare dirname "." = 0
     then
       begin
-      Io.debug "Chop out@.";
       match basenames with
       | [] ->  ""
       | dir :: dirs ->
@@ -137,8 +135,8 @@ let mk_tests testname dir pre_tests do_test post_tests =
              !fmt "@[<v 4>%s@ ERROR (%s)@]@ "
              (chop_path_prefix !smt_directory !current_file)
              (exn_to_string e) ;
-           Io.log "error@.";
-            incr errors ;)
+           Io.log "ERROR %s@." !current_file;
+           incr errors;)
      end;
      close ();
     ) (Config.get_files ());
@@ -177,9 +175,7 @@ let init_test_detection, test_detection , end_test_detection =
    let declared_logic = Logic.parse_logic (Ast_utils.get_logic s) in
    if not (Logic.equal detected_logic declared_logic) then
      begin
-       Io.debug "Diff detected@.";
        incr alerts;
-       Io.debug "Printing@.";
        Format.fprintf
          !fmt
          "@[<v 4>%d. %s@ %a (declared), %a (detected)@]@ "
@@ -187,12 +183,10 @@ let init_test_detection, test_detection , end_test_detection =
          (chop_path_prefix !smt_directory !current_file)
          Logic.pp_from_core declared_logic
          Logic.pp_from_core detected_logic;
-       Io.debug "Printed msg@.";
        (try
          let v = Hashtbl.find h detected_logic in
          Hashtbl.replace h detected_logic (succ v)
          with Not_found -> Hashtbl.add h detected_logic 1);
-       Io.debug "Registered htbl@.";
        (match Logic.one_bigger_dimension detected_logic declared_logic,
               Logic.one_bigger_dimension declared_logic detected_logic
         with
@@ -308,7 +302,7 @@ let init_test_use_def, test_use_def, end_test_use_def =
       @]@.\
       "
      header
-     !alerts !ntests !nunused !nundef !with_errors
+     !alerts !ntests !nunused !nundef !with_errors 
      (link_to !link) header
   )
 ;;
@@ -336,7 +330,6 @@ let list_smt2_files dir =
     match dirs with
     | [] -> files
     | dir :: dirs ->
-       Io.debug "Listing %s@." dir;
        let dirfiles = List.map (Filename.concat dir)
                             (Array.to_list (Sys.readdir dir)) in
        let subdirs, pure_files = List.partition Sys.is_directory dirfiles in

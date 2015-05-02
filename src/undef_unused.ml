@@ -59,8 +59,16 @@ let compute_uu (vs : varstate) =
   in unused, undefined
 ;;
 
+exception Ellipsis ;;
 let ppset fmt (s : SymbolSet.t) =
-  SymbolSet.iter (fun s -> Format.fprintf fmt "%a;@ " Pp.pp_symbol s) s
+  let n = ref 0 in
+  try
+    SymbolSet.iter
+      (fun s ->
+       if !n > 10 then raise Ellipsis
+       else (Format.fprintf fmt "%a;@ " Pp.pp_symbol s; incr n)) s
+  with Ellipsis ->
+    Format.fprintf fmt "... (%d more)@." (SymbolSet.cardinal s - !n)
 ;;
 
 let pp_uu fmt (unused, undef) =
@@ -128,11 +136,20 @@ let rec eval_term (vs: varstate) (t: Ast.term) =
      let outside_used = SymbolSet.diff vsterm.used (all_defined vsbindings) in
      let unused_bindings = SymbolSet.diff vsbindings.user_defined vsterm.used in
      if unused_bindings <> SymbolSet.empty then
-       Format.printf
-         "@[<v 0>Unused bounded variables: @[<hov 0>%a@]@]@."
-         pp_symbols unused_bindings;
-     { vs with used = SymbolSet.union 
-                        vs.used 
+       begin
+         let n = SymbolSet.cardinal unused_bindings in
+         if n < 10 then
+           Io.log
+             "@[<v 0>Unused bounded variables at %a @[<hov 0>%a@]@]@."
+             Pp.pp_loc t.term_loc
+             pp_symbols unused_bindings
+         else Io.log
+                "@[<v 0>%d unused bounded variables at %a@]@."
+                n
+                Pp.pp_loc t.term_loc
+       end;
+     { vs with used = SymbolSet.union
+                        vs.used
                         (SymbolSet.union outside_used vsbindings.used); }
   | TermForallTerm (svars, term)
   | TermExistsTerm (svars, term) ->
@@ -159,21 +176,19 @@ let eval_fundef (vs : varstate) (f : Ast.fun_def) =
      let vs' =
        eval_term
          { vs with user_defined = fdefined; used = SymbolSet.empty; } term in
-     let unused_params = SymbolSet.diff fdefined vs'.used in
+     let unused_params = SymbolSet.diff new_symbols vs'.used in
      if unused_params <> SymbolSet.empty then
-       Format.printf
-         "@[<v 0>Unused parameters for function %a:@ @[<hov 0>%a@]@]@."
-         Pp.pp_symbol sy
-         pp_symbols unused_params;
-     let outer_scope_used = SymbolSet.diff vs'.used fdefined in
+       Io.debug
+         "%d unused parameters for function %a@."
+         (SymbolSet.cardinal unused_params)
+         Pp.pp_symbol sy;
+     let outer_scope_used = SymbolSet.diff vs'.used new_symbols in
      let used' = SymbolSet.union vs.used outer_scope_used in
      define { vs with used = used' } sy
 ;;
 
 let eval_command (vs : varstate) (cmd : Ast.command) =
-  Io.debug "@[<hov 0>Used variables(%a): %a@]@."
-           Pp.pp_loc cmd.command_loc
-           pp_symbols vs.used;
+  Io.debug "%a@." Pp.pp_loc cmd.command_loc;
   match cmd.command_desc with
   | CmdAssert t -> eval_term vs t
   | CmdDeclareConst (sy, _)
