@@ -26,3 +26,6 @@ doc:
 static:
 	$(PP) "Static binary ..."
 	$(QUIET_MAKE) -C $(SRCDIR) static;
+
+
+	

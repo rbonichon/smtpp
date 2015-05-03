@@ -136,7 +136,7 @@ let rec pp_term fmt term =
   | TermSpecConstant sc -> pp_spec_constant fmt sc
   | TermQualIdentifier qualid -> pp_qual_identifier fmt qualid
   | TermQualIdentifierTerms (qualid, terms) ->
-     fprintf fmt "@[<v 1>(%a@ %a)@]"
+     fprintf fmt "@[<hov 0>(%a@ %a)@]"
              pp_qual_identifier qualid
              pp_terms terms
   | TermLetTerm (varbindings, term) ->

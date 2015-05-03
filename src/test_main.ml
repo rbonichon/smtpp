@@ -268,12 +268,18 @@ let init_test_use_def, test_use_def, end_test_use_def =
        Undef_unused.pp_uu uures
      end;
    if has_unused then begin
+       let card = SymbolSet.cardinal unused in
+       let ncheck = ref 0 in
        let check_unused =
          SymbolSet.fold
            (fun symb l ->
-            let vname = Ast_utils.string_of_symbol symb in
-            let n = grep_count vname !current_file in
-            if n > 1 then vname :: l
+            incr ncheck;
+            if !ncheck < 500 then 
+                let vname = Ast_utils.string_of_symbol symb in
+                Io.log "Checking %d/%d : %s@." !ncheck card !current_file;
+                let n = grep_count vname !current_file in
+                if n > 1 then vname :: l
+                else l
             else l
            ) unused []
        in

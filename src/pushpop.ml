@@ -69,14 +69,21 @@ let push cmds stack =
   in (List.filter should_be_pushed cmds) :: stack
 ;;
 
-let rec pop n stack =
-  match stack with
-  | [] -> if n > 0 then raise EmptyStack else stack
-  | _ :: xs ->  pop (n - 1) xs
+let pop n stack =
+  assert (n >= 0);
+  if n = 0 then stack
+  else
+    let rec aux n stack =
+      match stack with
+      | [] -> if n != 0 then raise EmptyStack else stack
+      | _ :: xs -> aux (n - 1) xs
+    in aux n stack
 ;;
 
 let stack_script stack = List.flatten stack
 ;;
+
+let exit_cmd = Ast_utils.mk_command CmdExit ;;
 
 (* Generates a list of n empty list *)
 let mk_empty_pushes n =
@@ -119,7 +126,8 @@ let eval (prelude, stack, cmds) cmd =
      printf "Outputting problem %s@." filename;
      let oc = open_out_bin filename in
      let ppf = formatter_of_out_channel oc in
-     Pp.pp_commands ppf (List.rev (stack_script ((cmd :: cmds) :: stack) @ prelude)) ;
+     let mycmds = List.rev (exit_cmd :: (stack_script ((cmd :: cmds) :: stack) @ prelude)) in
+     Pp.pp_commands ppf mycmds;
      close_out oc;
      prelude, stack, cmds
 

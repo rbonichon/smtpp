@@ -99,3 +99,7 @@ let mk_localized_symbol (s : string) (symbol_loc : Locations.t) : Ast.symbol =
     symbol_loc;
   }
 ;;
+
+let mk_command (cmd : Ast.command_desc) : Ast.command =
+  { command_desc = cmd; command_loc = Locations.dummy_loc; }
+;;

@@ -10,11 +10,6 @@ val symbol_of_vbinding : Ast.var_binding -> Ast.symbol ;;
 val symbols_of_sort : Ast.sort ->  Ast.symbol list ;;
 val string_of_symbol : Ast.symbol -> string ;;
 
-val mk_symbol : string -> Ast.symbol ;;
-  (** [mk_symbol name] creates a dummy symbol for name *)
-
-val mk_localized_symbol : string -> Locations.t -> Ast.symbol ;;
-
 val get_logic : Ast.script -> string ;;
   (** Extracts the logic name from a SMT script *)
 
@@ -29,3 +24,13 @@ val is_constant_term : Ast.term -> bool ;;
 val is_variable_term : Ast.term -> bool ;;
   (** [is_variable t] checks if the term t is possibly a variable or not.
    *)
+
+
+(** { 2 } Creation functions *)
+val mk_symbol : string -> Ast.symbol ;;
+(** [mk_symbol name] creates a dummy symbol for name *)
+
+val mk_localized_symbol : string -> Locations.t -> Ast.symbol ;;
+
+val mk_command: Ast.command_desc -> Ast.command ;;
+(** [mk_command cmd_des] creates a command with a dummy location *)
