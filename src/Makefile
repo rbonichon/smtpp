@@ -23,7 +23,7 @@ PARSER = parser
 LEXER = lexer
 MLFILES_PRE = \
 	version locations ast_utils utils config io \
-	sorts theory logic extended_ast pp inferlogic
+	sorts theory logic extended_ast pp pre_LA inferlogic
 MLFILES_TRANS = undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
@@ -35,9 +35,9 @@ SRCMLFILES = $(MLFILES_PRE:%=%.ml) \
 	$(MLFILES_POST:%=%.ml) \
 	$(MLIFILES:%=%.mli) \
 	$(MAIN:%=%.ml) \
-	$(TESTMAIN:%=%.ml) 
+	$(TESTMAIN:%=%.ml)
 SRCFILES = $(SRCMLFILES) $(OTHERFILES)
-GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml) 
+GENFILES = $(LEXER:%=%.ml) $(PARSER:%=%.ml)
 CAMLFILES = $(SRCMLFILES) $(GENFILES)
 
 CORE_CMXFILES = $(MLFILES_PRE:%=%.cmx) \

@@ -30,6 +30,8 @@ let rec argspec =
   "  print this option list and exits";
   "-pp", Arg.Unit (fun () -> Config.set_reprint true),
   " prints the SMT-LIB AST read on stdout";
+  "-preLA", Arg.Unit (fun () -> Config.set_preLA true),
+  " read SMT-LIB AST, rewrites LA terms and prints on stdout";
   "-debug", Arg.Unit (fun () -> Config.set_debug true),
   " enables debug messages";
   "-multi", Arg.Unit (fun () -> Config.set_pushpop true),
