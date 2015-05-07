@@ -39,6 +39,8 @@ let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;
 
 let set_reprint, get_reprint = genr_bool_switch () ;;
 
+let set_preLA, get_preLA = genr_bool_switch () ;;
+
 let set_preprocessor, get_preprocessor = genr_bool_switch () ;;
 
 let set_obfuscate, get_obfuscate = genr_bool_switch () ;;
@@ -55,7 +57,7 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
-let version = "9f4e906e02f739943b5d7dc858dd193e8d663ec4 (2015-04-22 11:03:02 -0300)" ;;
+let version = "e8b10fbd33e9ca39d599e0355bf8a6be31fa9419 (2015-04-24 18:40:26 +0200)" ;;
 
 let pp_version () =
   Format.printf "%s@." version
