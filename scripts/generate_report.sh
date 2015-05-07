@@ -18,9 +18,11 @@ PDFFILE=`echo $TEXFILE | sed -e 's/tex/pdf/'`
 echo "% $TITLE ${timestamp}" > $TFILE
 
 cat $TFILE $prelude $MDFILES > $REPORTFILE
-pandoc -s -f markdown -t latex $REPORTFILE > $TEXFILE
+pandoc -s -V geometry:margin=1in --number-sections -f markdown -t latex $REPORTFILE > $TEXFILE
 pdflatex $TEXFILE
 pdflatex $TEXFILE
+
+ln -sf $(PDFFILE) logic_detection_report.pdf
 
 rm -f $TEXFILE $TFILE *.aux *.log *.out
 
