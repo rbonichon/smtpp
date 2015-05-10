@@ -121,7 +121,7 @@ depend:: beforedepend $(CAMLFILES)
 ifneq ($(HEADACHE),no)
 license:
 	@for i in $(SRCFILES); do \
-		headache -r -h ../LICENSE $$i; \
+		$(HEADACHE) -c ../misc/headache_config.txt -r -h ../LICENSE $$i; \
 	done
 endif
 
