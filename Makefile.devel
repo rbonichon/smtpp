@@ -1,0 +1,4 @@
+include ./Makefile
+
+distrib: doc
+	git archive --format=tar.gz 

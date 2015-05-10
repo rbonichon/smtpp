@@ -1,0 +1,5 @@
+# Distribution
+
+`make -f Makefile.devel distrib`
+
+should produce
