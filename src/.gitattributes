@@ -1,6 +1,0 @@
-*.cm[aiox]      export-ignore
-*.cmxa          export-ignore
-.gitignore      export-ignore
-.giattributes   export-ignore
-test            export-ignore
-references      export-ignore
