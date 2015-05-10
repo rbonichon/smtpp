@@ -1,6 +1,10 @@
 /scripts  export-ignore
 /tests   export-ignore
 /misc    export-ignore
+/resources export-ignore
 *.devel   export-ignore
+TODO.md   export-ignore
+*.cm[aoxi] export-ignore
+*.cmxa     export-ignore
 .gitattributes export-ignore
 .gitignore export-ignore
