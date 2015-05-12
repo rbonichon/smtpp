@@ -47,7 +47,7 @@ let rec argspec =
   "-detect-logic", Arg.Unit (fun () -> Config.set_detect true),
   " infer the logic used by SMT-LIB script (alpha)";
   "-undef-unused", Arg.Unit (fun () -> Config.set_unused true),
-  " infer the logic used by SMT-LIB script (alpha)";
+  " prints list of undefined symbols and list of unused symbols (alpha)";
   "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess false),
   " disable the printing of success after each SMT-LIB command";
 ]
