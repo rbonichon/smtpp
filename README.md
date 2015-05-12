@@ -19,9 +19,10 @@ The usual incantation
 ```{.bash}
 % ./configure
 % make
+% make
 ```
 
-should produce two binaries in `src`
+should produce one of two binaries in `src`
 - `smtpp.byt` : a bytecode executable software
 - `smtpp.opt` : a native code executable
 
@@ -41,7 +42,7 @@ This uses the file `configure.ac`
 
 If you are working in the `src` directory, you might not want to recompile
 everything for every change, assuming you have not changed your development
-environment. 
+environment.
 
 If there is no `.depend` file, do a `touch .depend` first.
 Otherwise:
