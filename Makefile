@@ -27,5 +27,5 @@ static:
 	$(PP) "Static binary ..."
 	$(QUIET_MAKE) -C $(SRCDIR) static;
 
-
-	
+install:
+	$(QUIET_MAKE) -C $(SRCDIR) install;

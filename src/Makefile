@@ -90,6 +90,17 @@ tester: $(TEST)
 $(SNAT): depend $(CMXFILES)
 	$(PP) "STATIC $@"
 	$(CAMLBIN) $(CAMLINCLUDES) -noautolink -o $@ $(OPTLIBDEPS) $(CMXFILES) -cclib '-static'
+
+ifeq ($(BEST),opt)
+install: $(BEST)
+	$(PP) "Install $(NAT) as /usr/local/bin/$(EXE)"
+	install $(NAT) /usr/local/bin/$(EXE)
+else
+install: $(BEST)
+	$(PP) "Install $(BYT) as /usr/local/bin/$(EXE)"
+	install $(BYT) /usr/local/bin/$(EXE)
+endif
+
 clean::
 	-$(RM) $(EXE) $(EXE).byt *.annot
 	-$(RM) *.a $(PARSER).automaton $(PARSER).conflicts
