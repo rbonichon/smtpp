@@ -7,7 +7,7 @@ SNAT=static_$(EXE).opt
 LIB=lib$(EXE).a
 
 # VERSION=$(shell git log -1 --format="%H (%ai)")
-VERSION="smt-2015 20150512"
+VERSION=smt-2015 20150512
 # Load the default OCaml rules from the file Config.mk
 # includes default settings
 include ../Config.mk
