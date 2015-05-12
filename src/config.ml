@@ -53,6 +53,8 @@ let set_detect, get_detect = genr_bool_switch () ;;
 
 let set_unused, get_unused = genr_bool_switch () ;;
 
+let set_rm_unused, get_rm_unused = genr_bool_switch () ;;
+
 let set_keep_symbols, get_keep_symbols =
   let ks = ref [] in
   (fun (s:string) ->
@@ -61,6 +63,4 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
-let pp_version () =
-  Format.printf "%s@." Version.version
-;;
+let pp_version () = Format.printf "%s@." Version.version ;;

@@ -50,9 +50,9 @@ let apply () =
   let (lexbuf, close) = lex_file (List.hd (Config.get_files ()))  in
   try
     let script = Parser.script Lexer.token lexbuf in
-    let ext_script = Extended_ast.load_theories script in
+    let ext_script = Undef_unused.apply (Extended_ast.load_theories script) in
     Io.debug "Parsing and elaboration done@.";
-    if Config.get_unused () then Undef_unused.apply_and_pp ext_script;
+    (*if Config.get_unused () then Undef_unused.apply_and_pp ext_script; *)
 
     let ext_script = 
       if Config.get_detect () then
@@ -63,7 +63,8 @@ let apply () =
     in
     if Config.get_pushpop () then Pushpop.apply script;
     if Config.get_obfuscate () then Obfuscator.apply ext_script;
-    if Config.get_reprint () then Pp.pp Format.std_formatter script;
+    if Config.get_reprint () then
+      Pp.pp Format.std_formatter (Extended_ast.to_ast_script ext_script) ;
     if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;   
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
     close ();

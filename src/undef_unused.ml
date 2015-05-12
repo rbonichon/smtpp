@@ -224,7 +224,7 @@ let eval_commands vs cmds =
   List.fold_left eval_command vs cmds
 ;;
 
-let apply (script: Extended_ast.ext_script) =
+let compute (script: Extended_ast.ext_script) =
   let theory_defined =
     List.fold_left
       (fun s (name, _) -> SymbolSet.add (Ast_utils.mk_symbol name) s)
@@ -235,6 +235,26 @@ let apply (script: Extended_ast.ext_script) =
   compute_uu vs
 ;;
 
-let apply_and_pp (script : Extended_ast.ext_script) =
-  Format.printf "%a@." pp_uu (apply script)
+let compute_and_pp (script : Extended_ast.ext_script) =
+  Format.printf "%a@." pp_uu (compute script)
+;;
+
+let useful_command (unused_symbols : SymbolSet.t) cmd =
+  match cmd.command_desc with
+  | CmdDefineFun ({fun_def_desc = FunDef(sy, _, _, _, _); _ })
+  | CmdDeclareFun (sy, _, _, _)
+  | CmdDeclareConst (sy, _) -> not (SymbolSet.mem sy unused_symbols)
+  | _ -> true
+;;
+
+let apply (script: Extended_ast.ext_script) =
+  if Config.get_unused () then
+    let unused, _undefined = compute script in
+    if Config.get_rm_unused () then
+      { script with
+        ext_script_commands =
+          List.filter (useful_command unused) script.ext_script_commands;
+      }
+    else script
+  else script
 ;;
