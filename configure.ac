@@ -1,4 +1,4 @@
-AC_INIT(smtpp)
+AC_INIT()
 
 has_or_die ()
 {
