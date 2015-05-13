@@ -53,7 +53,12 @@ let set_detect, get_detect = genr_bool_switch () ;;
 
 let set_unused, get_unused = genr_bool_switch () ;;
 
-let set_rm_unused, get_rm_unused = genr_bool_switch () ;;
+let set_rm_unused, get_rm_unused =
+  let f, g  = genr_bool_switch ()
+  in
+  (fun b -> f b; set_unused b;),
+  g
+;;
 
 let set_keep_symbols, get_keep_symbols =
   let ks = ref [] in
