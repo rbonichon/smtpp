@@ -235,10 +235,6 @@ let compute (script: Extended_ast.ext_script) =
   compute_uu vs
 ;;
 
-let compute_and_pp (script : Extended_ast.ext_script) =
-  Format.printf "%a@." pp_uu (compute script)
-;;
-
 let useful_command (unused_symbols : SymbolSet.t) cmd =
   match cmd.command_desc with
   | CmdDefineFun ({fun_def_desc = FunDef(sy, _, _, _, _); _ })
@@ -249,12 +245,12 @@ let useful_command (unused_symbols : SymbolSet.t) cmd =
 
 let apply (script: Extended_ast.ext_script) =
   if Config.get_unused () then
-    let unused, _undefined = compute script in
+    let (unused, _undefined) as uu = compute script in
     if Config.get_rm_unused () then
       { script with
         ext_script_commands =
           List.filter (useful_command unused) script.ext_script_commands;
       }
-    else script
+    else (Format.printf "%a@." pp_uu uu; script)
   else script
 ;;
