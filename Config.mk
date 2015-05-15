@@ -1,9 +1,9 @@
 CAMLBYT=ocamlc.opt
 CAMLBIN=ocamlopt.opt
 CAMLLEX=ocamllex
-CAMLLEXOPTS=
+CAMLLEXOPTS?=
 CAMLYAC=menhir
-CAMLYACOPTS=
+CAMLYACOPTS?=
 RM=rm -f
 MKDIR=mkdir -p
 CAMLDEP=ocamldep

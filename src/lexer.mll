@@ -32,6 +32,7 @@
       "set-info"              , SETINFO;
       "get-info"              , GETINFO;
       "declare-sort"          , DECLARESORT;
+      "define-sort"           , DEFINESORT;
       "declare-fun"           , DECLAREFUN;
       "define-fun"            , DEFINEFUN;
       "define-fun-rec"        , DEFINEFUNREC;
@@ -112,8 +113,7 @@ let numeral = ('0' | ['1'-'9'] digit*)
 let hexadigit = (digit | ['a'-'f'])
 let lower = ['a'-'z']
 let upper = ['A'-'Z']
-let other = ['~' '!' '@' '$' '%' '^' '&' '*'
-                 '_' '-' '+' '=' '<' '>' '.' '?' '/''|'
+let other = ['~' '!' '@' '$' '%' '^' '&' '*' '_' '-' '+' '=' '<' '>' '.' '?' '/'
             ]
 let startchar= (lower | upper | other)
 
@@ -145,7 +145,7 @@ rule token = parse
         try Hashtbl.find reserved_table s
         with Not_found -> SYMBOL s
       }
- | '|' ([^ '|' '\\']* as s) '|' {
+ | '|' ([^ '|' '\\' ]* as s) '|' {
        for i = 0 to String.length s - 1 do
            if s.[i] = '\n' then Lexing.new_line lexbuf;
        done;
@@ -155,6 +155,7 @@ rule token = parse
       { let msg = sprintf "@[Bad character %c@]" (Lexing.lexeme_char lexbuf 0) in
         raise (LexError msg);
       }
+
 and string = parse
   | "\"\""
       { store_string_char '"'; string lexbuf; }

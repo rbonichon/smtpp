@@ -157,19 +157,19 @@ script:
   { let loc = mk_loc $startpos $endpos in
     mk_command (CmdDeclareConst(symb, so)) loc }
 | DECLAREFUN symb=symbol; polys=option(poly_parameters);
-  LPAREN sorts=sort* RPAREN so=sort;
+  LPAREN sorts=sort*; RPAREN so=sort;
   { let loc = mk_loc $startpos $endpos in
     mk_command (CmdDeclareFun (symb, polys, sorts, so)) loc }
 | DECLARESORT symb=symbol; num=NUMERAL;
   { let loc = mk_loc $startpos $endpos in
     mk_command (CmdDeclareSort(symb, num)) loc }
-| DEFINEFUN fdef=fun_nonrec_def; 
+| DEFINEFUN fdef=fun_nonrec_def;
  { let loc = mk_loc $startpos $endpos in
    mk_command (CmdDefineFun fdef) loc }
 | DEFINEFUNREC LPAREN frdefs=fun_rec_def+; RPAREN
  { let loc = mk_loc $startpos $endpos in
    mk_command (CmdDefineFunRec frdefs) loc }
-| DEFINESORT symb=symbol; LPAREN symbs=symbol+ RPAREN so=sort;
+| DEFINESORT symb=symbol; LPAREN symbs=symbol*; RPAREN so=sort;
   { let loc = mk_loc $startpos $endpos in
     mk_command (CmdDefineSort (symb, symbs, so)) loc }
 | ECHO s=STRING;

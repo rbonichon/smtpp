@@ -54,7 +54,7 @@ let apply () =
     Io.debug "Parsing and elaboration done@.";
     (*if Config.get_unused () then Undef_unused.apply_and_pp ext_script; *)
 
-    let ext_script = 
+    let ext_script =
       if Config.get_detect () then
         Extended_ast.set_logic
           (Inferlogic.detect_and_print script)
@@ -65,12 +65,12 @@ let apply () =
     if Config.get_obfuscate () then Obfuscator.apply ext_script;
     if Config.get_reprint () then
       Pp.pp Format.std_formatter (Extended_ast.to_ast_script ext_script) ;
-    if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;   
+    if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
     close ();
   with
   | Lexer.LexError msg ->
-     Format.eprintf "Parse error: %s@." msg;
+     Format.eprintf "Lex error: %s@." msg;
      report_error lexbuf
   | Parser.Error  ->
      Format.eprintf "Parse error:@.";
