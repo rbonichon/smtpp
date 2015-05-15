@@ -7,12 +7,11 @@
 *.html
 smtpp.byt
 smtpp.opt
-/src/config.cmo
 /src/lexer.ml
 /src/parser.ml
 /src/parser.mli
 /src/.depend
-/Config.mk
+Config.mk
 /autom4te.cache/
 /config.log
 /config.status

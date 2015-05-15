@@ -5,6 +5,7 @@ NAT=$(EXE).opt
 BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
 LIB=lib$(EXE).a
+CAMLYACOPTS=--trace
 
 # VERSION=$(shell git log -1 --format="%H (%ai)")
 VERSION=smt-2015 20150512
