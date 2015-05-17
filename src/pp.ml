@@ -24,12 +24,14 @@ open Ast
 
 let pp_loc fmt loc  =
   let b = loc.loc_start and e = loc.loc_end in
-  let l = b.pos_lnum in
+  let l1 = b.pos_lnum in
+  let l2 = e.pos_lnum in
   let fc = b.pos_cnum - b.pos_bol + 1 in
   let lc = e.pos_cnum - b.pos_bol + 1 in
-  fprintf fmt "L%d, C%d-%d" l fc lc
+  fprintf fmt "L%d-%d, C%d-%d" l1 l2 fc lc
 ;;
 
+  
 let pp_list pp_f fmt elts =
   let rec pp_list_aux fmt = function
     | [] -> ()

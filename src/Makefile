@@ -5,7 +5,6 @@ NAT=$(EXE).opt
 BYT=$(EXE).byt
 SNAT=static_$(EXE).opt
 LIB=lib$(EXE).a
-CAMLYACOPTS=--trace
 
 # VERSION=$(shell git log -1 --format="%H (%ai)")
 VERSION=smt-2015 20150512
@@ -26,7 +25,7 @@ LEXER = lexer
 MLFILES_PRE = \
 	version locations ast_utils utils config io \
 	sorts theory logic extended_ast pp pre_LA inferlogic
-MLFILES_TRANS = undef_unused pushpop obfuscator
+MLFILES_TRANS = satinfo undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main
 TESTMAIN = test_main

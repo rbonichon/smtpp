@@ -58,14 +58,13 @@ let set_logic (logic : Logic.t) (ext_script : ext_script) : ext_script =
   | [] -> ext_script
   | { command_desc = CmdSetLogic sy; command_loc; } :: cmds ->
      let logic_symbol =
-       Ast_utils.mk_localized_symbol logic_name sy.symbol_loc in
+       Ast_utils.mk_symbol ~loc:sy.symbol_loc logic_name  in
      { ext_script
      with ext_script_commands =
             { command_desc = CmdSetLogic logic_symbol; command_loc }
             :: cmds }
   | cmds ->
-     let logic_symbol =
-       Ast_utils.mk_localized_symbol logic_name Locations.dummy_loc in
+     let logic_symbol = Ast_utils.mk_symbol logic_name in
       { ext_script
       with ext_script_commands =
              { command_desc = CmdSetLogic logic_symbol;

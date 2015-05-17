@@ -50,9 +50,11 @@ let rec argspec =
   " prints list of undefined symbols and list of unused symbols (alpha)";
   "-rm-unused", Arg.Unit (fun () -> Config.set_rm_unused true),
   " remove unused symbols from script (alpha)";
-
   "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess false),
   " disable the printing of success after each SMT-LIB command";
+  "-set-sat-status-infos", Arg.String Config.set_sat_status,
+  " add a status info before check-sat commands w.r.t this comma separated list \
+    of status";
 ]
 
 and print_usage () =

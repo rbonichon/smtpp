@@ -27,10 +27,16 @@ val is_variable_term : Ast.term -> bool ;;
 
 
 (** { 2 } Creation functions *)
-val mk_symbol : string -> Ast.symbol ;;
-(** [mk_symbol name] creates a dummy symbol for name *)
-
-val mk_localized_symbol : string -> Locations.t -> Ast.symbol ;;
+val mk_symbol : ?loc:Locations.t -> string -> Ast.symbol ;;
+(** [mk_symbol ~loc name] creates a dummy symbol for name
+ ** if loc is not set, a dummy location will be used.
+ *)
 
 val mk_command: Ast.command_desc -> Ast.command ;;
 (** [mk_command cmd_des] creates a command with a dummy location *)
+
+val mk_sat_info : ?loc:Locations.t -> string -> Ast.command ;;
+(** [mk_sat_info ~loc sat_status] creates (set-info :status sat_status)
+ ** command.
+ ** if loc is not set, a dummy location will be used.
+ *)

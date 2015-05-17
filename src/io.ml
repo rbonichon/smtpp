@@ -57,7 +57,6 @@ let glog tag (output: output) txt  =
   Format.fprintf fmt "@{<item>";
   (if tag then Format.fprintf fmt "[%s] " output.name
    else Format.ifprintf fmt "");
-
   Format.kfprintf
     (fun fmt ->
      Format.fprintf fmt "@}@?";

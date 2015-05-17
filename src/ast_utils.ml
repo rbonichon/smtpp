@@ -88,18 +88,25 @@ let is_variable_term (t : Ast.term) : bool =
   not (is_constant_term t)
 ;;
 
-let mk_symbol (s:string) =
+let mk_symbol ?loc:(loc=Locations.dummy_loc) (s:string) =
   { symbol_desc = SimpleSymbol s;
-    symbol_loc = Locations.dummy_loc;
-  }
-;;
-
-let mk_localized_symbol (s : string) (symbol_loc : Locations.t) : Ast.symbol =
-  { symbol_desc = SimpleSymbol s;
-    symbol_loc;
+    symbol_loc = loc;
   }
 ;;
 
 let mk_command (cmd : Ast.command_desc) : Ast.command =
   { command_desc = cmd; command_loc = Locations.dummy_loc; }
 ;;
+
+let mk_sat_info ?loc:(loc=Locations.dummy_loc) (v: string): Ast.command =
+  let sat_val = mk_symbol ~loc v in
+  let attr_val = { attr_value_desc = AttrValSymbol sat_val;
+                   attr_value_loc = loc; } in
+  let keyword = "status" in
+  let attribute = { attribute_desc = AttrKeywordValue (keyword, attr_val);
+                    attribute_loc = loc; } in
+  { command_desc = CmdSetInfo attribute;
+    command_loc = loc;
+  }
+;;
+                      

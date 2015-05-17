@@ -46,11 +46,13 @@ let lex_file fname =
     | Not_found -> exit 2;
 ;;
 
+let (|>) f g = fun x -> f (g x) ;;
 let apply () =
   let (lexbuf, close) = lex_file (List.hd (Config.get_files ()))  in
   try
     let script = Parser.script Lexer.token lexbuf in
-    let ext_script = Undef_unused.apply (Extended_ast.load_theories script) in
+    let ext_script =
+      (Satinfo.add_sat_status |> Undef_unused.apply) (Extended_ast.load_theories script) in
     Io.debug "Parsing and elaboration done@.";
     (*if Config.get_unused () then Undef_unused.apply_and_pp ext_script; *)
 

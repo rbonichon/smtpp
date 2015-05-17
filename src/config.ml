@@ -35,7 +35,6 @@ let add_file, get_files, set_file, get_file, clear_files  =
   (fun () ->  files := [])
 ;;
 
-
 let set_pushpop, get_pushpop = genr_bool_switch () ;;
 
 let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;
@@ -68,4 +67,12 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
+let set_sat_status, get_sat_status =
+  let st = ref None in
+  (fun (s : string) ->
+   st := Some (List.map String.trim (Utils.string_explode ',' s));
+  ),
+  (fun () -> !st)
+;;
+  
 let pp_version () = Format.printf "%s@." Version.version ;;
