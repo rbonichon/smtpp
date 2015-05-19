@@ -115,8 +115,20 @@ let opt_compare (f : 'a -> 'a -> int) (e1 : 'a option) (e2 : 'a option) =
   | Some x, Some y -> f x y
 ;;
 
-let default_opt v opt =
+let default_opt (default : 'a) (opt : 'a option) : 'a =
   match opt with
-  | None -> v
+  | None -> default
   | Some v' -> v'
+;;
+
+let read_all_lines (filename : string) : string list =
+  let ic = open_in_bin filename in
+  let lines = ref [] in
+  (try
+      while true do
+        lines := input_line ic :: !lines
+      done;
+    with End_of_file -> ());
+  close_in ic;
+  List.rev !lines
 ;;

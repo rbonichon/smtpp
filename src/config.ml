@@ -67,12 +67,17 @@ let set_keep_symbols, get_keep_symbols =
   (fun () -> !ks)
 ;;
 
-let set_sat_status, get_sat_status =
+let set_sat_status,
+    set_sat_status_from_file,
+    get_sat_status =
   let st = ref None in
   (fun (s : string) ->
    st := Some (List.map String.trim (Utils.string_explode ',' s));
   ),
+  (fun filename ->
+   st := Some (List.map String.trim (Utils.read_all_lines filename))
+  ),
   (fun () -> !st)
 ;;
-  
+
 let pp_version () = Format.printf "%s@." Version.version ;;

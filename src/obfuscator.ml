@@ -65,8 +65,6 @@ module SymbHash = struct
 end
 ;;
 
-
-
 let obfuscate_index = function
   | IdxNum n -> IdxNum n
   | IdxSymbol symb -> IdxSymbol (SymbHash.get_symbol symb)

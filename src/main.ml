@@ -55,6 +55,9 @@ let rec argspec =
   "-set-sat-status-infos", Arg.String Config.set_sat_status,
   " add a status info before check-sat commands w.r.t this comma separated list \
     of status";
+  "-set-sat-status-from-file", Arg.String Config.set_sat_status_from_file,
+  " add a status info before check-sat commands w.r.t contents of file (one \
+   status per line)";
 ]
 
 and print_usage () =
