@@ -36,8 +36,8 @@ type output = {
 let default_out name = { name; fmt = Format.std_formatter; } ;;
 let default_err name = { name; fmt = Format.err_formatter; } ;;
 
-let debug_output = default_err "debug"
-and log_output = default_err "log"
+let debug_output = default_out "debug"
+and log_output = default_out "log"
 and warning_output = default_err "warning"
 and res_output = default_out "result"
 and error_output = { name = "error"; fmt = Format.err_formatter; }
