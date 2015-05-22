@@ -49,7 +49,6 @@ let ouputs = [ debug_output; log_output; warning_output; error_output; ] ;;
 
 let is_warn_err s = s = warning_output.name || s = error_output.name ;;
 
-
 let glog tag (output: output) txt  =
   let fmt = output.fmt in
   Format.fprintf fmt "@{<item>";

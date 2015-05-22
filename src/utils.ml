@@ -121,14 +121,16 @@ let default_opt (default : 'a) (opt : 'a option) : 'a =
   | Some v' -> v'
 ;;
 
-let read_all_lines (filename : string) : string list =
+let read_all_lines_rev (filename : string) : string list =
   let ic = open_in_bin filename in
   let lines = ref [] in
+  let i = ref 0 in
   (try
       while true do
+        incr i;
         lines := input_line ic :: !lines
       done;
     with End_of_file -> ());
   close_in ic;
-  List.rev !lines
+  !lines
 ;;

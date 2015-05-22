@@ -58,6 +58,7 @@ let eval_command =
 
 let add_sat_status (script : ext_script) =
   let status_list = Config.get_sat_status () in
+  Io.debug "Adding sat status@.";
   match status_list with
   | None -> script
   | Some status_list ->

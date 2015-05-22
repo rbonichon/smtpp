@@ -20,7 +20,7 @@
     open Locations ;;
 
     let pp_success () =
-       if Config.get_smtsuccess () then Format.printf "success@.";
+       if Config.get_smtsuccess () then Format.printf "success@?@.";
     ;;
 
     (* Helper construction functions.

@@ -32,7 +32,8 @@ val default_opt : 'a -> 'a option -> 'a ;;
  ** value if it is Some v, [default_value] otherwise.
  *)
 
-val read_all_lines : string -> string list ;;
-(** [read_all_lines filename] returns the list of lines of the file.
+val read_all_lines_rev : string -> string list ;;
+(** [read_all_lines filename] returns the list of lines of the file, starting
+ ** from last.
  ** Newline has been stripped.
  *)
