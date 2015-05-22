@@ -14,7 +14,7 @@
 
 .ml.cmo:
 	$(PP_BYT) $@
-	$(CAMLBYT)  $(CAMLINCLUDES) $(CAMLFLAGS) -c $<
+	$(CAMLBYT)  $(CAMLINCLUDES) $(CAMLFLAGS) $(CAMLBYTFLAGS) -c $<
 
 .mli.cmi:
 	$(PP_BYT) $@
@@ -22,7 +22,7 @@
 
 .ml.cmx:
 	$(PP_OPT) $@
-	$(CAMLBIN) $(CAMLINCLUDES) $(CAMLFLAGS) -c  $<
+	$(CAMLBIN) $(CAMLINCLUDES) $(CAMLFLAGS) $(CAMLOPTFLAGS) -c  $<
 
 .mly.ml:
 	$(PP_YACC) $@
