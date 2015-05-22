@@ -345,10 +345,10 @@ module ArithmeticCheck = struct
            match r.kind with
            | Some NonLinear -> r
            | _ ->
-              let id = Ast_utils.id_from_qid qid in
+              let id = Ast_utils.id_of_qid qid in
               let r =
                 if Theory.CommonArithmetics.is_multiplication id &&
-                     Utils.has_more_than 1 Ast_utils.is_variable_term terms
+                     Utils.has_more_than 1 Checklib.is_variable_term terms
                 then begin
                     Io.debug "Non-linear multiplication detected on %a@."
                              Pp.pp_term term;

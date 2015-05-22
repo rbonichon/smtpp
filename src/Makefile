@@ -24,7 +24,8 @@ PARSER = parser
 LEXER = lexer
 MLFILES_PRE = \
 	version locations ast_utils utils config io \
-	sorts theory logic extended_ast pp pre_LA inferlogic
+	sorts theory logic extended_ast checklib \
+	pp pre_LA inferlogic
 MLFILES_TRANS = satinfo undef_unused pushpop obfuscator
 MLFILES_POST = do_parse
 MAIN = main

@@ -27,18 +27,18 @@ let sort_of_svar (sv : sorted_var) =
   | SortedVar (_, so) -> so
 ;;
 
-let symbol_from_id (id : Ast.identifier) =
-    match id.id_desc with
-    | IdSymbol sy -> sy
-    | IdUnderscore (sy, _) -> sy
+let symbol_of_id (id : Ast.identifier) : Ast.symbol=
+  match id.id_desc with
+  | IdSymbol sy -> sy
+  | IdUnderscore (sy, _) -> sy
 ;;
 
 let symbols_of_sort (sort : Ast.sort) : Ast.symbol list =
   let rec aux symbols sort =
     match sort.sort_desc with
-    | SortIdentifier id -> (symbol_from_id id) :: symbols
+    | SortIdentifier id -> (symbol_of_id id) :: symbols
     | SortFun (id, sorts) ->
-       List.fold_left aux ((symbol_from_id id) :: symbols) sorts
+       List.fold_left aux ((symbol_of_id id) :: symbols) sorts
   in List.rev (aux [] sort)
 ;;
 
@@ -53,7 +53,7 @@ let symbol_of_vbinding (vb : var_binding) =
   | VarBinding (sy, _) -> sy
 ;;
 
-let id_from_qid (qid : Ast.qual_identifier) : identifier =
+let id_of_qid (qid : Ast.qual_identifier) : identifier =
   match qid.qual_identifier_desc with
   | QualIdentifierAs (id, _)
   | QualIdentifierIdentifier id -> id
@@ -71,21 +71,6 @@ let get_logic (s : Ast.script) =
        end
     | _ :: cmds -> aux cmds
   in aux s.script_commands
-;;
-
-let rec is_constant_term (t : Ast.term) : bool =
-  match t.term_desc with
-  | TermSpecConstant _ -> true
-  | TermAnnotatedTerm (t, _) -> is_constant_term t
-  | TermLetTerm _
-  | TermQualIdentifier _
-  | TermQualIdentifierTerms _
-  | TermForallTerm _
-  | TermExistsTerm _ -> false
-;;
-
-let is_variable_term (t : Ast.term) : bool =
-  not (is_constant_term t)
 ;;
 
 let mk_symbol ?loc:(loc=Locations.dummy_loc) (s:string) =
@@ -109,4 +94,3 @@ let mk_sat_info ?loc:(loc=Locations.dummy_loc) (v: string): Ast.command =
     command_loc = loc;
   }
 ;;
-                      

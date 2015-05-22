@@ -58,7 +58,9 @@ end
 module Make(TDef : TheoryDefinition) : Theory = struct
     let name = TDef.name ;;
     let theory = mk_theory TDef.sorts TDef.functions ;;
+
     let sortnames, function_names = all_symbol_strings theory ;;
+
     let mem (sy : Ast.symbol) =
       let symbol_name = Ast_utils.string_of_symbol sy in
       StringSet.mem symbol_name sortnames
@@ -184,6 +186,14 @@ module SMTNumerics = struct
       let t = combine SMTInt.theory SMTReal.theory in
       { t with theory_symbols = t.theory_symbols @ symbols }
     ;;
+
+    let sortnames, function_names = all_symbol_strings theory ;;
+
+    let mem (sy : Ast.symbol) =
+      let symbol_name = Ast_utils.string_of_symbol sy in
+      StringSet.mem symbol_name sortnames
+      || StringSet.mem symbol_name function_names
+    ;;
 end
 
 (** BitVectors *)
@@ -241,3 +251,10 @@ module SMTArrayDefinition = struct
 end
 
 module SMTArray = Make(SMTArrayDefinition) ;;
+
+let is_smtlib_symbol (symb : Ast.symbol) : bool =
+  SMTCore.mem symb
+  || SMTNumerics.mem symb
+  || SMTArray.mem symb
+  || SMTBitVectors.mem symb
+;;
