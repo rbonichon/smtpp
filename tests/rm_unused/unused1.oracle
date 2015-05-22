@@ -1,0 +1,9 @@
+(set-logic QF_LIA)
+(declare-fun f () Int)
+(assert (= 2 f))
+(assert (forall ((x Int)) (= x f)))
+(assert (= 2 f))
+(define-fun f ((x Int)) Int 2)
+(check-sat)
+(exit)
+

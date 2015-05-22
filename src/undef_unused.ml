@@ -40,6 +40,9 @@ let empty_vstate = {
     theory_defined = SymbolSet.empty;
 } ;;
 
+(* Quick fix to remove bound but unused variables or unused function paramters *)
+(* let unused_locals = Hashtbl.create 7 ;; *)
+
 let all_defined (vs : varstate) =
   SymbolSet.union vs.user_defined vs.theory_defined
 ;;
@@ -101,6 +104,23 @@ let svar_set (svars: Ast.sorted_vars) =
     SymbolSet.empty svars
 ;;
 
+let limit = ref 10 ;;
+let handle_locally_unused (unused : SymbolSet.t) (loc: Locations.t) =
+  let n = SymbolSet.cardinal unused in
+  if n < !limit then
+    Io.warning
+      "@[<v 0>Unused bounded variables at %a @[<hov 0>%a@]@]@."
+      Pp.pp_loc loc pp_symbols unused
+  else Io.warning
+         "@[<v 0>%d unused bounded variables at %a@]@."
+         n Pp.pp_loc loc;
+(*  SymbolSet.iter
+    (fun s -> Hashtbl.add unused_locals s ())
+    unused; *)
+;;
+
+
+
 let eval_index (vs : varstate) (idx : Ast.index) =
   match idx with
   | IdxNum _ -> vs
@@ -121,80 +141,128 @@ let eval_qual_identifier (vs : varstate) (qid : Ast.qual_identifier) =
 
 let rec eval_term (vs: varstate) (t: Ast.term) =
   match t.term_desc with
-  | TermSpecConstant _ -> vs
-  | TermQualIdentifier qid -> eval_qual_identifier vs qid
+  | TermSpecConstant _ -> vs, t
+  | TermQualIdentifier qid -> eval_qual_identifier vs qid, t
   | TermQualIdentifierTerms (qid, terms) ->
-     eval_qual_identifier (eval_terms vs terms) qid
+     let vs, terms = eval_terms vs terms in
+     eval_qual_identifier vs qid,
+     { t with term_desc = TermQualIdentifierTerms(qid, List.rev terms) }
 
   | TermLetTerm (vbindings, term) ->
-     let vsbindings = List.fold_left eval_var_binding empty_vstate vbindings in
+     let vsbindings, vbindings  =
+       List.fold_left
+         (fun (vs, vbs) vb ->
+          let vs, vb' = eval_var_binding vs vb in vs, vb' :: vbs)
+         (empty_vstate, [])
+         vbindings in
      let vs' = { vs with
                  user_defined =
                    SymbolSet.union vsbindings.user_defined vs.user_defined;
                  used = SymbolSet.empty; } in
-     let vsterm = eval_term vs' term in
+     let vsterm, term' = eval_term vs' term in
      let outside_used = SymbolSet.diff vsterm.used (all_defined vsbindings) in
      let unused_bindings = SymbolSet.diff vsbindings.user_defined vsterm.used in
-     if unused_bindings <> SymbolSet.empty then
-       begin
-         let n = SymbolSet.cardinal unused_bindings in
-         if n < 10 then
-           Io.log
-             "@[<v 0>Unused bounded variables at %a @[<hov 0>%a@]@]@."
-             Pp.pp_loc t.term_loc
-             pp_symbols unused_bindings
-         else Io.log
-                "@[<v 0>%d unused bounded variables at %a@]@."
-                n
-                Pp.pp_loc t.term_loc
-       end;
+     let vbindings' =
+       if not (SymbolSet.is_empty unused_bindings) then
+         begin
+           handle_locally_unused unused_bindings t.term_loc;
+           if Config.get_rm_unused () then
+             List.fold_left
+               (fun l vb ->
+                if SymbolSet.mem
+                     (Ast_utils.symbol_of_vbinding vb) unused_bindings
+                then l
+                else vb :: l
+               )
+               [] vbindings
+           else List.rev vbindings
+         end
+       else List.rev vbindings
+     in
      { vs with used = SymbolSet.union
                         vs.used
                         (SymbolSet.union outside_used vsbindings.used); }
-  | TermForallTerm (svars, term)
+     , if vbindings' = [] then term'
+       else { t with term_desc = TermLetTerm (vbindings', term') }
+  | TermForallTerm (svars, term) ->
+     let vs, svars', term' = handle_quantifier vs svars term in
+     vs,
+     if svars' = [] then term'
+     else { t with term_desc = TermForallTerm (svars', term') }
   | TermExistsTerm (svars, term) ->
-     let new_symbols = svar_set svars in
-     let user_defined = SymbolSet.union new_symbols vs.user_defined in
-     let vsterm = eval_term { empty_vstate with user_defined; } term in
-     let outside_used = SymbolSet.diff vsterm.used new_symbols in
-     { vs with used = SymbolSet.union outside_used vs.used; }
-  | TermAnnotatedTerm (term, _) -> eval_term vs term
+     let vs, svars', term' = handle_quantifier vs svars term in
+     vs,
+     if svars' = [] then term'
+     else { t with term_desc = TermExistsTerm (svars', term') }
+  | TermAnnotatedTerm (term, annot) ->
+     let vs, term' = eval_term vs term in
+     vs, { t with term_desc = TermAnnotatedTerm(term', annot) }
 
 and eval_var_binding (vs : varstate) (vb : Ast.var_binding) =
   match vb.var_binding_desc with
-  | VarBinding (sy, term) -> define (eval_term vs term) sy
+  | VarBinding (sy, term) ->
+     let vs, term' = eval_term vs term in
+     define vs sy, { vb with var_binding_desc = VarBinding(sy, term') }
 
 and eval_terms vs terms =
-  List.fold_left eval_term vs terms
+  let vs, terms =
+    List.fold_left
+      (fun (vs, terms) t ->
+       let vs, t' = eval_term vs t in
+       vs, t' :: terms)
+      (vs, []) terms
+  in vs, List.rev terms
+
+and handle_quantifier vs svars term =
+  let new_symbols = svar_set svars in
+  let user_defined = SymbolSet.union new_symbols vs.user_defined in
+  let vsterm, term' = eval_term { empty_vstate with user_defined; } term in
+  let outside_used = SymbolSet.diff vsterm.used new_symbols in
+  let unused_bindings = SymbolSet.diff new_symbols vsterm.used in
+   let svars' =
+     if not (SymbolSet.is_empty unused_bindings) then
+       begin
+         handle_locally_unused unused_bindings term.term_loc;
+         List.filter
+           (fun svar ->
+            not (SymbolSet.mem (Ast_utils.symbol_of_svar svar) unused_bindings)
+           ) svars
+       end
+     else svars
+   in
+   { vs with used = SymbolSet.union outside_used vs.used; },
+   svars', term'
+
 ;;
 
 let eval_fundef (vs : varstate) (f : Ast.fun_def) =
   match f.fun_def_desc with
-  | FunDef (sy, _, svars, _, term) ->
+  | FunDef (sy, optsorts, svars, sort, body) ->
      let new_symbols = svar_set svars in
      let fdefined = SymbolSet.union vs.user_defined new_symbols in
-     let vs' =
-       eval_term
-         { vs with user_defined = fdefined; used = SymbolSet.empty; } term in
-     let unused_params = SymbolSet.diff new_symbols vs'.used in
-     if unused_params <> SymbolSet.empty then
-       Io.debug
-         "%d unused parameters for function %a@."
-         (SymbolSet.cardinal unused_params)
-         Pp.pp_symbol sy;
+     let vs', _svars', body' =
+       handle_quantifier
+         { vs with user_defined = fdefined; used = SymbolSet.empty; }
+         svars body
+     in
      let outer_scope_used = SymbolSet.diff vs'.used new_symbols in
      let used' = SymbolSet.union vs.used outer_scope_used in
-     define { vs with used = used' } sy
+     define { vs with used = used' } sy,
+     { f with fun_def_desc = FunDef(sy, optsorts, svars, sort, body') }
 ;;
 
-let eval_command (vs : varstate) (cmd : Ast.command) =
-  Io.debug "%a@." Pp.pp_loc cmd.command_loc;
+let eval_command ((vs, cmds) : varstate * Ast.commands) (cmd : Ast.command) =
   match cmd.command_desc with
-  | CmdAssert t -> eval_term vs t
+  | CmdAssert t ->
+     let vs, t' = eval_term vs t in
+     vs, { cmd with command_desc = CmdAssert t' } :: cmds
   | CmdDeclareConst (sy, _)
-  | CmdDeclareFun (sy, _, _, _) -> define vs sy
-  | CmdDefineFun fdef -> eval_fundef vs fdef
-  | CmdCheckSatAssuming symbols -> List.fold_left use vs symbols
+  | CmdDeclareFun (sy, _, _, _) -> define vs sy, cmd :: cmds
+  | CmdDefineFun fdef ->
+     let vs, fdef = eval_fundef vs fdef in
+     vs, { cmd with command_desc = CmdDefineFun fdef } :: cmds
+  | CmdCheckSatAssuming symbols ->
+     List.fold_left use vs symbols, cmd :: cmds
   | CmdDefineFunRec _fdef_rec -> Io.not_yet_implemented "Recursive function"
   | CmdCheckSat
   | CmdDeclareSort _
@@ -217,11 +285,12 @@ let eval_command (vs : varstate) (cmd : Ast.command) =
   | CmdResetAssertions
   | CmdSetInfo _
   | CmdSetLogic _
-  | CmdSetOption _ -> vs
+  | CmdSetOption _ -> vs, cmd :: cmds
 ;;
 
 let eval_commands vs cmds =
-  List.fold_left eval_command vs cmds
+  let vs, cmds = List.fold_left eval_command (vs, []) cmds in
+  vs, List.rev cmds
 ;;
 
 let compute (script: Extended_ast.ext_script) =
@@ -231,8 +300,10 @@ let compute (script: Extended_ast.ext_script) =
       SymbolSet.empty script.ext_script_theory.theory_symbols
   in
   let vstate = { empty_vstate with theory_defined; } in
-  let vs = eval_commands vstate script.ext_script_commands in
-  compute_uu vs
+  let vs, ext_script_commands =
+    eval_commands vstate script.ext_script_commands in
+  let unused, undefined = compute_uu vs in
+  unused, undefined, { script with ext_script_commands }
 ;;
 
 let useful_command (unused_symbols : SymbolSet.t) cmd =
@@ -245,12 +316,12 @@ let useful_command (unused_symbols : SymbolSet.t) cmd =
 
 let apply (script: Extended_ast.ext_script) =
   if Config.get_unused () then
-    let (unused, _undefined) as uu = compute script in
+    let unused, undefined, script = compute script in
     if Config.get_rm_unused () then
       { script with
         ext_script_commands =
           List.filter (useful_command unused) script.ext_script_commands;
       }
-    else (Format.printf "%a@." pp_uu uu; script)
+    else (Format.printf "%a@." pp_uu (unused, undefined); script)
   else script
 ;;
