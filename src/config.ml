@@ -50,6 +50,7 @@ let set_obfuscate, get_obfuscate = genr_bool_switch () ;;
 let set_detect, get_detect = genr_bool_switch () ;;
 
 let set_unused, get_unused = genr_bool_switch () ;;
+let set_quiet, get_quiet = genr_bool_switch () ;;
 
 let set_rm_unused, get_rm_unused =
   let f, g  = genr_bool_switch ()

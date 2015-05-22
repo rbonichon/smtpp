@@ -33,7 +33,6 @@ type output = {
   mutable fmt : Format.formatter;
 }
 
-
 let default_out name = { name; fmt = Format.std_formatter; } ;;
 
 let debug_output = default_out "debug"
@@ -47,9 +46,7 @@ let set_formatter output fmt = output.fmt <- fmt ;;
 
 let ouputs = [ debug_output; log_output; warning_output; error_output; ] ;;
 
-let is_warn_err s =
-  s = warning_output.name ||
-    s = error_output.name
+let is_warn_err s = s = warning_output.name || s = error_output.name ;;
 
 
 let glog tag (output: output) txt  =
@@ -65,6 +62,11 @@ let glog tag (output: output) txt  =
     fmt txt
 ;;
 
+let silenceable_glog tag output txt =
+  if Config.get_quiet () then Format.ifprintf Format.std_formatter txt
+  else glog tag output txt
+;;
+
 (** Various types of outputs *)
 let set_tagging, get_tagging =
   let tag = ref true in
@@ -77,14 +79,14 @@ let debug txt =
    else Format.ifprintf Format.std_formatter txt
 ;;
 
-let warning txt = glog (get_tagging ()) warning_output txt;;
+let warning txt = silenceable_glog (get_tagging ()) warning_output txt;;
 
 let error txt =
   glog (get_tagging ()) error_output txt ;;
 
 let result txt = glog false res_output txt;;
 
-let log txt = glog (get_tagging ()) log_output txt ;;
+let log txt = silenceable_glog (get_tagging ()) log_output txt ;;
 
 let warn _loc msg =  warning "%s" msg ;;
 
