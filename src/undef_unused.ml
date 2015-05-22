@@ -146,7 +146,7 @@ let rec eval_term (vs: varstate) (t: Ast.term) =
   | TermQualIdentifierTerms (qid, terms) ->
      let vs, terms = eval_terms vs terms in
      eval_qual_identifier vs qid,
-     { t with term_desc = TermQualIdentifierTerms(qid, List.rev terms) }
+     { t with term_desc = TermQualIdentifierTerms(qid, terms) }
 
   | TermLetTerm (vbindings, term) ->
      let vsbindings, vbindings  =

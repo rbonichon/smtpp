@@ -3,6 +3,7 @@
 (assert (let ((x 1)) (= f 2)))
 (assert (forall ((x Int) (y Int)) (= f x)))
 (assert (exists ((x Int)) (= f 2)))
+(assert (< 1 2))
 (define-fun g ((x Int)) Int 2)
 (check-sat)
 (exit)
