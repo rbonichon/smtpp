@@ -76,7 +76,6 @@ let set_sat_status,
   ),
   (fun filename ->
    st := Some (List.rev_map String.trim (Utils.read_all_lines_rev filename));
-   Format.printf "Read SAT status from file %s@." filename;
   ),
   (fun () -> !st)
 ;;
