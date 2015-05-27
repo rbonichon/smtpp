@@ -75,7 +75,6 @@ $(NAT): depend $(CMXFILES)
 	$(PP) "LINK  $@"
 	$(CAMLBIN) $(CAMLINCLUDES) $(CAMLOPTFLAGS) -o $@ $(OPTLIBDEPS) $(CMXFILES)
 
-
 $(BYT): depend $(CMIFILES) $(CMOFILES)
 	$(PP) "LINK  $@"
 	$(CAMLBYT) $(CAMLINCLUDES) -o $@ $(LIBDEPS) $(CMOFILES)
@@ -109,7 +108,6 @@ clean::
 	for i in $(PARSER) $(LEXER); do\
 		$(RM) -f $$i.ml $$i.mli; \
 	done
-
 
 lib: $(CMOFILES_LIB) $(CMXFILES_LIB) $(MLOBJS) $(COBJS)
 	ocamlmklib -verbose -o smtpp $(CMOFILES_LIB) $(MLOBJS) $(COBJS)

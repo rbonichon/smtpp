@@ -272,7 +272,8 @@ let init_test_use_def, test_use_def, end_test_use_def =
   ),
   (fun s ->
    incr ntests;
-   let (unused, undef) as uures = Undef_unused.apply s in
+   let unused, undef, _ = Undef_unused.compute s in
+   let uures = unused, undef in
    let has_unused = not (SymbolSet.is_empty unused)
    and has_undef = not (SymbolSet.is_empty undef)
    in
@@ -291,7 +292,7 @@ let init_test_use_def, test_use_def, end_test_use_def =
          SymbolSet.fold
            (fun symb l ->
             incr ncheck;
-            if !ncheck < 500 then 
+            if !ncheck < 500 then
                 let vname = Ast_utils.string_of_symbol symb in
                 Io.log "Checking %d/%d : %s@." !ncheck card !current_file;
                 let n = grep_count vname !current_file in
@@ -325,7 +326,7 @@ let init_test_use_def, test_use_def, end_test_use_def =
       @]@.\
       "
      header
-     !alerts !ntests !nunused !nundef !with_errors 
+     !alerts !ntests !nunused !nundef !with_errors
      (link_to !link) header
   )
 ;;
