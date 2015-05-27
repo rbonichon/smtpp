@@ -22,10 +22,10 @@ let test_pp, get_pp_stats  =
   let pp_fname1 = new_file ()
   and pp_fname2 = new_file () in
   printf "Parsing %s@." f;
-  let write_cmd = sprintf "cat %s | %s -pp > %s" f !exe pp_fname1 in
+  let write_cmd = sprintf "cat %s | %s -pp %s > %s" f !exe f pp_fname1 in
   printf "Parsing %s@." pp_fname1;
   let reparse_and_write = 
-    sprintf "cat %s | %s -pp > %s" pp_fname1 !exe pp_fname2 in
+    sprintf "cat %s | %s -pp %s > %s" pp_fname1 !exe pp_fname1 pp_fname2 in
   let n1 = Sys.command write_cmd in
   let n2 = Sys.command reparse_and_write in
   if n1 <> 0 || n2 <> 0 then failwith (sprintf "Failed pp test with %s\n" f);
