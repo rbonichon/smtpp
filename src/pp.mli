@@ -29,3 +29,9 @@ val pp_tofile: string -> Ast.script -> unit ;;
  ** [filename]. The file is created if needed. Contents from any present file is
  ** not preserved.
  *)
+ 
+ 
+val pp_pre_term: Format.formatter -> Ast.term -> unit ;;
+(** [pp_pre_term fmt term] Prints a term on std output.
+ ** Used by pre_LA for debugging.
+ *)

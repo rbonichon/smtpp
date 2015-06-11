@@ -33,6 +33,8 @@ let rec argspec =
   "-quiet", Arg.Unit (fun () -> Config.set_quiet true),
   " do not print any messages except errors and results";
   "-preLA", Arg.Unit (fun () -> Config.set_preLA true),
+  " read SMT-LIB AST, rewrites LA terms and prints on stdout"; 
+  "-preNLA", Arg.Unit (fun () -> Config.set_preNLA true),
   " read SMT-LIB AST, rewrites LA terms and prints on stdout";
   "-debug", Arg.Unit (fun () -> Config.set_debug true),
   " enables debug messages";

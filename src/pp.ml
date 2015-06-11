@@ -299,3 +299,8 @@ let pp_tofile filename program =
   Format.fprintf fmt "%a@." pp program;
   close_out oc;
 ;;
+
+let pp_pre_term fmt t =
+  pp_term fmt t;
+;;
+

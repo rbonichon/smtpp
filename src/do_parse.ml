@@ -67,7 +67,8 @@ let apply () =
     if Config.get_obfuscate () then Obfuscator.apply ext_script;
     if Config.get_reprint () then
       Pp.pp Format.std_formatter (Extended_ast.to_ast_script ext_script) ;
-    if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;
+    if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script; 
+    if Config.get_preNLA () then Pre_LA.pre_NLA Format.std_formatter script;   
 (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
     close ();
   with

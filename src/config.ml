@@ -43,6 +43,8 @@ let set_reprint, get_reprint = genr_bool_switch () ;;
 
 let set_preLA, get_preLA = genr_bool_switch () ;;
 
+let set_preNLA, get_preNLA = genr_bool_switch () ;;
+
 let set_preprocessor, get_preprocessor = genr_bool_switch () ;;
 
 let set_obfuscate, get_obfuscate = genr_bool_switch () ;;
