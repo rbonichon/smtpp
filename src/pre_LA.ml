@@ -171,7 +171,11 @@ let rec pre_flat_term t =
                 term_loc = t.term_loc;}
 
             ) 
-          | _ -> raise (TermError "ERROR: pre_flat_term: operator not yet implemented")
+          | _ -> 
+            (
+              pp_pre_term Format.std_formatter t;
+              raise (TermError "ERROR: pre_flat_term: operator not yet implemented")
+            )
         );
       );
     )
@@ -355,7 +359,7 @@ let rec pre_term_clear_rhs t =
 
             | "*", "*" -> 
               (
-                let new_lhs = { term_desc = (TermQualIdentifierTerms((mk_qual_id "-" t.term_loc), [lhs;rhs])); 
+                let new_lhs = { term_desc = (TermQualIdentifierTerms((mk_qual_id "+" t.term_loc), [lhs;(pre_LA_get_opposite_term rhs "1")])); 
                                 term_loc = t.term_loc;} in
                 let new_rhs = (mk_numeral_term "0.0" t.term_loc) in
                 { term_desc = (TermQualIdentifierTerms((pre_LA_get_qual_identifier t), [new_lhs; new_rhs])); term_loc = t.term_loc; }
@@ -413,15 +417,8 @@ let rec pre_term_clear_rhs t =
                 )
               | "*" ->
                 (
-                  let new_lhs = { term_desc = (TermQualIdentifierTerms((mk_qual_id "-" t.term_loc), [rhs; lhs])); term_loc = t.term_loc;} in
-                  match (pre_LA_get_term_operator t) with
-                  | ">=" -> { term_desc = (TermQualIdentifierTerms((mk_qual_id "<=" t.term_loc), [new_lhs; new_rhs])); term_loc = t.term_loc;}
-                  | "<=" -> { term_desc = (TermQualIdentifierTerms((mk_qual_id ">=" t.term_loc), [new_lhs; new_rhs])); term_loc = t.term_loc;}
-                  | ">" -> { term_desc = (TermQualIdentifierTerms((mk_qual_id "<" t.term_loc), [new_lhs; new_rhs])); term_loc = t.term_loc;}
-                  | "<" -> { term_desc = (TermQualIdentifierTerms((mk_qual_id ">" t.term_loc), [new_lhs; new_rhs])); term_loc = t.term_loc;}
-                  | "=" -> { term_desc = (TermQualIdentifierTerms((mk_qual_id "=" t.term_loc), [new_lhs; new_rhs])); term_loc = t.term_loc;}
-                  | _ -> raise (TermError "ERROR: pre_term_clear_rhs: unpossible relational operator")
-
+                  let new_lhs = { term_desc = (TermQualIdentifierTerms((mk_qual_id "+" t.term_loc), [lhs;(pre_LA_get_opposite_term rhs "1")])); term_loc = t.term_loc;} in
+                  { term_desc = (TermQualIdentifierTerms(qual_id, [new_lhs; new_rhs])); term_loc = t.term_loc;}
                 )
               | _ -> raise (TermError "ERROR: pre_term_clear_rhs: complete operator");
              
@@ -451,7 +448,7 @@ let rec pre_term_clear_rhs t =
             )
             | "*" ->
             (
-              let new_lhs = { term_desc = (TermQualIdentifierTerms((mk_qual_id "-" t.term_loc), [lhs;rhs])); 
+              let new_lhs = { term_desc = (TermQualIdentifierTerms((mk_qual_id "+" t.term_loc), [lhs;(pre_LA_get_opposite_term rhs "1")])); 
                               term_loc = t.term_loc;} in
               let new_rhs = (mk_numeral_term "0.0" t.term_loc) in
               { term_desc = (TermQualIdentifierTerms((pre_LA_get_qual_identifier t), [new_lhs; new_rhs])); 
@@ -771,66 +768,116 @@ let rec pre_LA_trivial_rel_merge t =
       match (pre_LA_get_term_operator t) with
       | "and" ->
         (
-         let rel_terms = (List.filter (fun x -> (pre_LA_is_rel_constraint x) && 
-						     (((pre_LA_get_rel_expr x) = "<=") || ((pre_LA_get_rel_expr x) = "<"))) terms) in
-	 match (List.length  rel_terms) with
-         | 2 -> 
-           (
-            let t1 = (List.nth rel_terms 0) in
-            let op1 = (pre_LA_get_rel_expr t1) in
-            let terms1 = (pre_LA_get_terms_rel_expr t1) in
-            let lhs1 = (List.nth terms1 0) in
-            let rhs1 = (List.nth terms1 1) in
-            let t2 = (List.nth rel_terms 1) in
-            let op2 = (pre_LA_get_rel_expr t2) in
-            let terms2 = (pre_LA_get_terms_rel_expr t1) in
-            let lhs2 = (List.nth terms2 0) in
-            let rhs2 = (List.nth terms2 1) in
-            match op1, op2 with
-            | "=", "="
-            | "=", "<="
-            | "=", ">="
-            | "=", "<"
-            | "=", ">" 
-            | "<=", ">="
-            | "<=", ">"
-            | ">=", "<"
-            | ">=", ">"
-            | "<", ">"->
-              (
-                print_string ("op1: " ^ op1 ^ " op2: " ^ op2);
-                print_string "\n~~~T1\n";
-                (pp_pre_term Format.std_formatter t1);
-                print_string "\n~~~T2\n";
-                (pp_pre_term Format.std_formatter t2);
+         let nodup_terms = (remove_dup terms) in
+         let rel_terms = ref (List.filter (fun x -> (pre_LA_is_rel_constraint x)) nodup_terms) in
+         let new_cmp_terms = ref [] in
+         let new_rel_terms = ref [] in
+         let no_rel_terms = ref (List.filter (fun x -> not (pre_LA_is_rel_constraint x)) nodup_terms) in
+         let are_comparable t1 t2 =
+            let ts1 = (pre_LA_get_terms_rel_expr t1) in
+            let ts2 = (pre_LA_get_terms_rel_expr t2) in
+            let lhs1 = (List.nth ts1 0) in
+            let rhs1 = (List.nth ts1 1) in 
+            let lhs2 = (List.nth ts2 0) in
+            let rhs2 = (List.nth ts2 1) in
 
-                raise (TermError "ERROR: pre_LA_trivial_rel_merge combination not yet considered")
-              )
-            | "=", "="
-            | "<=", "<="
-            | ">=", ">="
-            | "<", "<"
-            | ">", ">" ->
-              (
- 	        if (rhs1 = rhs2 && lhs1 = lhs2) then (pre_LA_trivial_rel_merge t1)
-                else 
-                  {term_desc = (TermQualIdentifierTerms(qual_id, (List.map pre_LA_trivial_rel_merge terms_simp))); term_loc = t.term_loc;};
-              )
-            | "<=", "<" ->
-	        if (rhs1 = rhs2 && lhs1 = lhs2) then 
-                  (
-                   let comp_terms = (List.filter (fun x -> not (pre_LA_is_rel_constraint x) || 
-						     (not ((pre_LA_get_rel_expr x) = "<=") && not ((pre_LA_get_rel_expr x) = "<"))) terms) in
-                   {term_desc = (TermQualIdentifierTerms(qual_id, (List.append comp_terms [{term_desc = (TermQualIdentifierTerms((pre_LA_get_qual_identifier t2), [lhs1; rhs1])); 
-                                                                                            term_loc = t.term_loc;}])));
-                    term_loc = t.term_loc;};
-                  )
-                else 
-                  {term_desc = (TermQualIdentifierTerms(qual_id, (List.map pre_LA_trivial_rel_merge terms_simp))); term_loc = t.term_loc;};
-            | _ -> {term_desc = (TermQualIdentifierTerms(qual_id, (List.map pre_LA_trivial_rel_merge terms_simp))); term_loc = t.term_loc;};
-            
+            (are_equiv rhs1  rhs2) && (are_equiv lhs1  lhs2) in
+
+	 for i = 0 to (List.length !rel_terms) - 1 do
+           new_cmp_terms := [];
+           let t1 = (List.nth !rel_terms i) in
+           let op1 = (pre_LA_get_rel_expr t1) in
+           let comparable_terms = (List.filter (fun x -> not (op1=(pre_LA_get_rel_expr x))  && (are_comparable t1 x)) !rel_terms) in           
+
+
+           for j=0 to (List.length comparable_terms) - 1 do
+             let t2 = (List.nth comparable_terms j) in
+             let op2 = (pre_LA_get_rel_expr t2) in                                      
+             match op1, op2 with
+             | "=", "="             
+             | "<=", "<="
+             | ">=", ">="
+             | "<", "<"
+             | ">", ">" -> 
+               (
+                 try
+                   List.find (fun x -> (are_equiv x t1)) !new_cmp_terms;
+                   ()
+                 with Not_found ->
+                   (
+                     new_cmp_terms := List.append !new_cmp_terms [t1]
+                   )
+               )
+             | "<=", ">="
+             | ">=", "<=" ->
+               (
+                 let ts1 = (pre_LA_get_terms_rel_expr t1) in
+                 let new_e = {term_desc = (TermQualIdentifierTerms((mk_qual_id "="  t.term_loc), (List.map pre_LA_trivial_rel_merge ts1))); term_loc = t.term_loc;} in
+                 try
+                   List.find (fun x -> (are_equiv x new_e)) !new_cmp_terms;
+                   ()
+                 with Not_found ->
+                   (
+                     new_cmp_terms := List.append !new_cmp_terms [new_e]
+                   )
+
+               )
+             | ">=", ">"
+             | "<=", "<" ->
+               (
+                 try
+                   List.find (fun x -> (are_equiv x t2)) !new_cmp_terms;
+                   ()
+                 with Not_found ->
+                   (
+                     new_cmp_terms := List.append !new_cmp_terms [t2]
+                   )
+               ) 
+             | "<", "<="       
+             | ">", ">=" -> ()      
+             | _, _ ->
+               (
+                 print_string ("op1: " ^ op1 ^ " op2: " ^ op2);
+                 print_string "\n~~~T1\n";
+                 (pp_pre_term Format.std_formatter t1);
+                 print_string "\n~~~T2\n";
+                 (pp_pre_term Format.std_formatter t2);
+
+                 Format.fprintf Format.std_formatter "\nareEquiv %b\n" (are_comparable t1 t2);
+
+                 raise (TermError "ERROR: pre_LA_trivial_rel_merge combination not yet considered")
+               )
+           done;
+
+           if (List.length !new_cmp_terms) = 0 then
+           (
+             try
+               List.find (fun x -> (are_equiv x t1)) !new_rel_terms;
+               ()
+             with Not_found ->
+             (
+                new_rel_terms := List.append !new_rel_terms [t1]
+             )
            )
-         | _ -> {term_desc = (TermQualIdentifierTerms(qual_id, (List.map pre_LA_trivial_rel_merge terms_simp))); term_loc = t.term_loc;};
+           else
+           (
+             for j = 0 to (List.length !new_cmp_terms) - 1 do
+               let e = (List.nth !new_cmp_terms j) in
+               try
+                 List.find (fun x -> (are_equiv x e)) !new_rel_terms;
+                 ()
+               with Not_found ->
+                 (
+                   new_rel_terms := List.append !new_rel_terms [e];
+                 )
+             done;
+              
+             ()
+           );
+         done;
+
+         let new_terms = List.append !new_rel_terms !no_rel_terms in
+         {term_desc = (TermQualIdentifierTerms(qual_id, (List.map pre_LA_trivial_rel_merge new_terms))); term_loc = t.term_loc;}
         )
       | _ -> {term_desc = (TermQualIdentifierTerms(qual_id, (List.map pre_LA_trivial_rel_merge terms_simp))); term_loc = t.term_loc;};
     else t;
@@ -1716,16 +1763,9 @@ let rec pre_LA_get_nb_occurs cmds =
 
 let pre_LA_split_vars s =
        
-      print_string "Before counting vars\n";
       (pre_LA_get_nb_occurs s);
-      print_string "After counting vars\n";
    
       let nb_occurs = ref (Hashtbl.fold (fun k v acc -> (k, v) :: acc) !nb_occurs_res []) in
-
-      print_string ("After counting vars 500 " ^ (string_of_int ( List.length  !nb_occurs)) ^ "\n");
- 
-      (* let max_nb_oc = ref (List.fold_left (max) 0 (List.map (fun x -> (snd x)) !nb_occurs)) in *)
-      (* let min_nb_oc = ref (List.fold_left (min) max_int (List.map (fun x -> (snd x)) !nb_occurs)) in *)
 
       let max_nb_oc = ref 0 in
       let min_nb_oc = ref max_int in
@@ -1736,12 +1776,8 @@ let pre_LA_split_vars s =
          min_nb_oc := (snd (List.nth !nb_occurs i));
       done;
       
-
-      print_string "After counting vars 1000\n";
-
       let m = ref ((!min_nb_oc + !max_nb_oc) / 2) in
       let m1 = ref ((!m + !max_nb_oc) / 2) in
-      print_string "After counting vars 2000\n";
 
       for i = 0 to ( List.length  !nb_occurs) - 1 do
         if  (snd (List.nth !nb_occurs i)) > !m1 then
@@ -1749,14 +1785,6 @@ let pre_LA_split_vars s =
         else
           local_vars := List.append !local_vars [(fst (List.nth !nb_occurs i))];
       done;
-
-      (*
-      global_vars := (List.map  (fun x -> (fst x)) ( List.filter (fun x -> (snd x) >= !m1) !nb_occurs));
-      print_string "After counting vars3000\n";
-
-      local_vars := (List.map  (fun x -> (fst x)) ( List.filter (fun x -> (snd x) < !m1) !nb_occurs));
-      print_string "After counting vars 4000\n";
-      *)
 ;;
 
 
@@ -1796,15 +1824,11 @@ let pre_LA fmt (s: Ast.script) =
 
       let s_assert_sort = (List.map (fun c -> apply_simp_fun c pre_LA_sort_terms) s_assert_flat) in    
 
-      print_string "After sort\n";
 
       let s_assert_3 = (List.map (fun c -> apply_simp_fun c pre_LA_trivial_rel_merge) s_assert_sort) in 
 
-      print_string "Before spliting vars\n";
 
       (pre_LA_split_vars s_assert_3);
-
-      raise (TermError "End");
       
       cc_list := [];
 
@@ -1835,17 +1859,21 @@ let pre_NLA fmt (s: Ast.script) =
   let s_assert_4 = (List.map (fun c -> apply_simp_fun c pre_term_distribution) s_assert_3) in      
   let s_assert_5 = (List.map (fun c -> apply_simp_fun c pre_flat_term) s_assert_4) in      
   let s_assert_6 = (List.map (fun c -> apply_simp_fun c pre_term_clear_rhs) s_assert_5) in 
+
+  pp_tofile "in.smt2" { script_commands = (List.append s_pre (List.append s_assert_6 s_post)) ; 
+                                  script_loc = s.script_loc;}; 
+
+
   let s_assert_7 = (List.map (fun c -> apply_simp_fun c pre_LA_trivial_rel_merge) s_assert_6) in 
   (
     (List.map (fun c -> (apply_fun_script c pre_LA_save_var_ordering_term)) s_assert_5);
     let s_assert_sort = (List.map (fun c -> apply_simp_fun c pre_LA_sort_terms) s_assert_6) in    
-    pp_tofile "out_before.smt2" { script_commands = (List.append s_pre (List.append s_assert_6 s_post)) ; 
-                                  script_loc = s.script_loc;}; 
-    pp_tofile "out_after.smt2" { script_commands = (List.append s_pre (List.append s_assert_7 s_post)) ; 
+
+    pp_tofile "out.smt2" { script_commands = (List.append s_pre (List.append s_assert_7 s_post)) ; 
                                  script_loc = s.script_loc;};  
 
 
-    (List.map  (fun x -> print_string ((fst x) ^ "\t" ^ (string_of_int (snd x)) ^ "\n")) !var_ordering);
-    print_string "After sort\n";
+   (*    (List.map  (fun x -> print_string ((fst x) ^ "\t" ^ (string_of_int (snd x)) ^ "\n")) !var_ordering); *)
+ 
   )
 ;;

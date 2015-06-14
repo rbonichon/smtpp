@@ -301,6 +301,8 @@ let pp_tofile filename program =
 ;;
 
 let pp_pre_term fmt t =
+  Format.fprintf fmt "\n";
   pp_term fmt t;
+  Format.fprintf fmt "\n";
 ;;
 
