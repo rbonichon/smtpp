@@ -242,7 +242,13 @@ type command = {
 type commands = command list ;;
 
 type script = {
-    script_commands : commands;
-    script_loc      : Locations.t;
-  }
+  script_commands : commands;
+  script_loc      : Locations.t;
+}
 ;;
+
+
+type model = {
+  model_commands : commands;
+  model_loc : Locations.t ;
+}

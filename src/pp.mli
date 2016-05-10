@@ -1,3 +1,5 @@
+val pp_spec_constant : Format.formatter -> Ast.constant -> unit
+  
 val pp_loc : Format.formatter -> Locations.t -> unit ;;
 (** pretty-prints a location *)
 
@@ -23,6 +25,8 @@ val pp_commands: Format.formatter -> Ast.commands -> unit ;;
 (** pp_commands pretty_prints an arbitrary command list onto a formatter.
     Used by pp.
  *)
+
+val pp_model : Format.formatter -> Ast.model -> unit ;;
 
 val pp_tofile: string -> Ast.script -> unit ;;
 (** [pp_tofile filename script] Prints a SMT-LIB script into the file named

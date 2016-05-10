@@ -280,7 +280,7 @@ let pp_command_list fmt l =
 ;;
 
 let pp_commands fmt cmds =
- Format.fprintf fmt "@[<v 0>%a@]@." pp_command_list cmds
+ Format.fprintf fmt "@[<v 0>%a@]" pp_command_list cmds
 ;;
 
 let pp fmt (s: Ast.script) =
@@ -296,4 +296,10 @@ let pp_tofile filename program =
   let fmt = Format.formatter_of_out_channel oc in
   Format.fprintf fmt "%a@." pp program;
   close_out oc;
+;;
+
+
+let pp_model ppf model =
+  Format.fprintf ppf "@[(@[<v 1>model@ %a@])@]"
+    pp_commands model.model_commands
 ;;

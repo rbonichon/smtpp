@@ -58,6 +58,7 @@
       "true"                  , BOOL(true);
       "false"                 , BOOL(false);
       "meta-info"             , METAINFO;
+      "model"                 , MODEL;
   ];;
 
   let reserved_table =
@@ -113,9 +114,9 @@ let hexadigit = (digit | ['a'-'f'])
 let lower = ['a'-'z']
 let upper = ['A'-'Z']
 let other = ['~' '!' '@' '$' '%' '^' '&' '*'
-                 '_' '-' '+' '=' '<' '>' '.' '?' '/''|'
+             '_' '-' '+' '=' '<' '>' '.' '?' '/''|'
             ]
-let startchar= (lower | upper | other)
+let startchar = (lower | upper | other)
 
 rule token = parse
   | newline   { Lexing.new_line lexbuf; token lexbuf }
@@ -143,7 +144,8 @@ rule token = parse
       {
         let s = Lexing.lexeme lexbuf in
         try Hashtbl.find reserved_table s
-        with Not_found -> SYMBOL s
+        with Not_found ->
+         SYMBOL s
       }
  | '|' ([^ '|' '\\']* as s) '|' {
        for i = 0 to String.length s - 1 do

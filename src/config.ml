@@ -36,6 +36,8 @@ let add_file, get_files, set_file, get_file, clear_files  =
 ;;
 
 
+let set_parse_model, get_parse_model = genr_bool_switch ();;
+
 let set_pushpop, get_pushpop = genr_bool_switch () ;;
 
 let set_smtsuccess, get_smtsuccess = genr_bool_switch () ;;

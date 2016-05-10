@@ -46,26 +46,76 @@ let lex_file fname =
     | Not_found -> exit 2;
 ;;
 
-let apply () =
-  let (lexbuf, close) = lex_file (List.hd (Config.get_files ()))  in
-  try
-    let script = Parser.script Lexer.token lexbuf in
-    let ext_script = Extended_ast.load_theories script in
-    Io.debug "Parsing and elaboration done@.";
-    if Config.get_unused () then Undef_unused.apply_and_pp ext_script;
 
-    let ext_script = 
-      if Config.get_detect () then
-        Extended_ast.set_logic
-          (Inferlogic.detect_and_print script)
-          ext_script
-      else ext_script
-    in
-    if Config.get_pushpop () then Pushpop.apply script;
-    if Config.get_obfuscate () then Obfuscator.apply ext_script;
-    if Config.get_reprint () then Pp.pp Format.std_formatter script;
-    if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;   
-(*    if Config.get_preprocessor () then Preprocessor.apply script; *)
+let parse_smt_model file =
+  let (lexbuf, close) = lex_file file in
+  try
+  let model = Parser.model Lexer.token lexbuf in
+  Io.debug "%a@." Pp.pp_model model;
+  let smt_model = Model.extract model in
+  Io.result "%a" Model.pp smt_model
+  with
+  | Lexer.LexError msg ->
+    Format.eprintf "Parse error: %s@." msg;
+    raise Not_found
+  | Parser.Error  ->
+    Format.eprintf "Parsesdfs error:@.";
+    raise Not_found
+
+let parse_yices_model file =
+  let (lexbuf, close) = lex_file file in
+  try
+    let model = Parser.yices_model Lexer.token lexbuf in
+    let smt_model = Model.Yices.extract model in
+    Io.result "%a" Model.pp smt_model
+  with
+  | Lexer.LexError msg ->
+     Format.eprintf "Parse error: %s@." msg;
+     report_error lexbuf
+  | Parser.Error  ->
+     Format.eprintf "Parse error:@.";
+     report_error lexbuf
+;;
+
+
+
+let parse_generic_model file =
+  try
+    Format.printf "NORMAL@.";
+    parse_smt_model file
+  with
+  | _ ->
+    begin
+        Format.printf "YICES@.";
+        parse_yices_model file
+    end
+
+
+  
+let apply () =
+  let file = List.hd (Config.get_files ()) in
+  let (lexbuf, close) = lex_file file  in
+  try
+    if Config.get_parse_model () then (close (); parse_generic_model file)
+    else  begin
+      let script = Parser.script Lexer.token lexbuf in
+      let ext_script = Extended_ast.load_theories script in
+      Io.debug "Parsing and elaboration done@.";
+      if Config.get_unused () then Undef_unused.apply_and_pp ext_script;
+
+      let ext_script = 
+        if Config.get_detect () then
+          Extended_ast.set_logic
+            (Inferlogic.detect_and_print script)
+            ext_script
+        else ext_script
+      in
+      if Config.get_pushpop () then Pushpop.apply script;
+      if Config.get_obfuscate () then Obfuscator.apply ext_script;
+      if Config.get_reprint () then Pp.pp Format.std_formatter script;
+      if Config.get_preLA () then Pre_LA.pre_LA Format.std_formatter script;
+      (*    if Config.get_preprocessor () then Preprocessor.apply script; *)
+    end;
     close ();
   with
   | Lexer.LexError msg ->

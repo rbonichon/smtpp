@@ -50,6 +50,8 @@ let rec argspec =
   " infer the logic used by SMT-LIB script (alpha)";
   "-disable-success", Arg.Unit (fun () -> Config.set_smtsuccess false),
   " disable the printing of success after each SMT-LIB command";
+  "-parse-model", Arg.Unit (fun () -> Config.set_parse_model true),
+  " parse a smtlib model";
 ]
 
 and print_usage () =

@@ -17,22 +17,21 @@
 
 %{
     open Ast
+    open Pp
+    open Format
     open Locations ;;
-
-    let pp_success () =
-       if Config.get_smtsuccess () then Format.printf "success@.";
-    ;;
 
     (* Helper construction functions.
        File locations is handled in production rules.
        *)
     let mk_sexpr sexpr_desc sexpr_loc = { sexpr_desc; sexpr_loc; } ;;
-    let mk_identifier id_desc id_loc = { id_desc; id_loc; } ;;
+    let mk_identifier id_desc id_loc =
+    { id_desc; id_loc; }
+    ;;
 
     let mk_sort sort_desc sort_loc = { sort_desc; sort_loc; } ;;
 
     let mk_command command_desc command_loc =
-      pp_success ();
       { command_desc; command_loc; }
     ;;
 
@@ -49,14 +48,18 @@
     ;;
 
     let mk_qual_identifier qual_identifier_desc qual_identifier_loc =
-      { qual_identifier_desc; qual_identifier_loc; }
+      let qid = { qual_identifier_desc; qual_identifier_loc; } in
+      printf "qid: %a@." pp_qual_identifier qid; qid
     ;;
 
     let mk_var_binding var_binding_desc var_binding_loc =
       { var_binding_desc; var_binding_loc; }
     ;;
 
-    let mk_term term_desc term_loc = { term_desc; term_loc; } ;;
+    let mk_term term_desc term_loc =
+    let term = { term_desc; term_loc; } in
+    Format.printf "term: %a@." pp_term term; term
+    ;;
 
     let mk_smt_option smt_option_desc smt_option_loc = {
         smt_option_desc; smt_option_loc ;
@@ -67,6 +70,9 @@
       { script_commands; script_loc; }
     ;;
 
+    let mk_model model_commands model_loc = { model_commands; model_loc; }
+    ;;
+    
     let mk_attribute attribute_desc attribute_loc =
       { attribute_desc; attribute_loc; }
     ;;
@@ -122,6 +128,7 @@
 %token RESET
 %token RESETASSERTIONS
 %token METAINFO
+%token MODEL
 
 /* Other tokens */
 %token LPAREN
@@ -139,6 +146,12 @@
 %token <string> QUOTEDSYMBOL
 
 %type  <Ast.script> script
+%type  <Ast.model> model
+%type  <Ast.term list> yices_model
+
+%start script
+%start model
+%start yices_model
 
 %%
 
@@ -147,6 +160,21 @@ script:
   { let loc = mk_loc $startpos $endpos in
     mk_script commands loc }
 ;
+
+model:
+| commands=delimited(LPAREN,
+     preceded(MODEL, list(delimited(LPAREN,command,RPAREN))),
+     RPAREN); EOF
+  { let loc = mk_loc $startpos $endpos in
+    mk_model commands loc
+   }        
+;
+
+yices_model:
+| terms=term+; EOF { terms}
+;
+
+
 
 %inline command:
 | ASSERT t=term;

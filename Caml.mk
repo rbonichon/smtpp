@@ -26,7 +26,7 @@
 
 .mly.ml:
 	$(PP_YACC) $@
-	$(CAMLYAC) $(CAMLYACOPTS) $<
+	$(CAMLYAC) --trace $(CAMLYACOPTS) $<
 
 .mly.mli:
 	$(PP_YACC) $@
