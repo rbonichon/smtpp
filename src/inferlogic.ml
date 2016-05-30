@@ -248,7 +248,7 @@ module ArithmeticCheck = struct
       | False
     ;;
 
-    let is_unset (v : ternary) =
+    let _is_unset (v : ternary) =
       match v with
       | True -> false
       | Maybe | False -> true

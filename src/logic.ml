@@ -79,7 +79,7 @@ let default = {
   }
 ;;
 
-let equal (l1 : t) (l2 : t) =
+let _equal (l1 : t) (l2 : t) =
   l1.array = l2.array
   && l1.uninterpreted_functions = l2.uninterpreted_functions
   && l1.bitvectors =  l2.bitvectors
@@ -90,7 +90,7 @@ let equal (l1 : t) (l2 : t) =
                        l1.arithmetic_sort l2.arithmetic_sort = 0
 ;;
 
-let one_bigger_dimension (l1 : t) (l2 : t) =
+let _one_bigger_dimension (l1 : t) (l2 : t) =
   l1.array && not l2.array
   || l1.uninterpreted_functions && not l2.uninterpreted_functions
   || l1.bitvectors && not l2.bitvectors
@@ -199,7 +199,7 @@ let smt_logics =
   in q_logics @ qf_logics
 ;;
 
-let is_smt_logic (logic : string) = List.mem logic smt_logics;;
+let _is_smt_logic (logic : string) = List.mem logic smt_logics;;
 
 let only_array (logic : t) =
   logic.array && not logic.quantifiers && not logic.bitvectors

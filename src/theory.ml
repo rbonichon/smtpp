@@ -68,7 +68,7 @@ module Make(TDef : TheoryDefinition) : Theory = struct
 
 
 module EmptyTheory = struct
-    let theory = { theory_symbols = []; theory_sorts = []; } ;;
+    let _theory = { theory_symbols = []; theory_sorts = []; } ;;
 end
 
 (** Definition for SMT Core *)

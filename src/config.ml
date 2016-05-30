@@ -26,7 +26,7 @@ let genr_bool_switch () =
 
 let set_debug, get_debug = genr_bool_switch () ;;
 
-let add_file, get_files, set_file, get_file, clear_files  =
+let _add_file, get_files, set_file, _get_file, _clear_files  =
   let (files : string list ref) = ref ([] : string list) in
   (fun (f : string) -> files := f :: !files),
   (fun () -> !files),
