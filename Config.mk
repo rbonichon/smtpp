@@ -1,13 +1,13 @@
 CAMLBYT=ocamlc.opt
 CAMLBIN=ocamlopt.opt
 CAMLLEX=ocamllex
-CAMLLEXOPTS=
+CAMLLEXOPTS?=
 CAMLYAC=menhir
-CAMLYACOPTS=
+CAMLYACOPTS?=
 RM=rm -f
 MKDIR=mkdir -p
 CAMLDEP=ocamldep
-CAMLFLAGS=-w +a-4 -g -annot
+CAMLFLAGS?=-w +a-4 -g -annot
 CAMLDOC=ocamldoc
 HEADACHE=headache
 BEST=opt

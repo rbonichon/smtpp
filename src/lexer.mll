@@ -32,6 +32,7 @@
       "set-info"              , SETINFO;
       "get-info"              , GETINFO;
       "declare-sort"          , DECLARESORT;
+      "define-sort"          , DEFINESORT;      
       "declare-fun"           , DECLAREFUN;
       "define-fun"            , DEFINEFUN;
       "define-fun-rec"        , DEFINEFUNREC;
@@ -142,8 +143,9 @@ rule token = parse
   | startchar (startchar | digit)*
       {
         let s = Lexing.lexeme lexbuf in
+        Format.printf "SYMBOL? %s@." s;
         try Hashtbl.find reserved_table s
-        with Not_found -> SYMBOL s
+        with Not_found -> Format.printf "SYMBOL %s@." s; SYMBOL s
       }
  | '|' ([^ '|' '\\']* as s) '|' {
        for i = 0 to String.length s - 1 do

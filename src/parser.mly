@@ -169,7 +169,7 @@ script:
 | DEFINEFUNREC LPAREN frdefs=fun_rec_def+; RPAREN
  { let loc = mk_loc $startpos $endpos in
    mk_command (CmdDefineFunRec frdefs) loc }
-| DEFINESORT symb=symbol; LPAREN symbs=symbol+ RPAREN so=sort;
+| DEFINESORT symb=symbol; LPAREN symbs=list(symbol); RPAREN so=sort;
   { let loc = mk_loc $startpos $endpos in
     mk_command (CmdDefineSort (symb, symbs, so)) loc }
 | ECHO s=STRING;
