@@ -10,6 +10,8 @@ end
 
 module SymbolSet : Set.S with type elt = Ast.symbol ;;
 
+module SymbolMap : Map.S with type key = Ast.symbol ;;
+
 val sfprintf : ('a, Format.formatter, unit, string) format4 -> 'a ;;
 
 val mk_header : Format.formatter -> string -> unit ;;

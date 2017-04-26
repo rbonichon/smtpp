@@ -67,10 +67,6 @@ module Make(TDef : TheoryDefinition) : Theory = struct
   end
 
 
-module EmptyTheory = struct
-    let _theory = { theory_symbols = []; theory_sorts = []; } ;;
-end
-
 (** Definition for SMT Core *)
 module SMTCoreDefinition = struct
     let name = "Core" ;;
